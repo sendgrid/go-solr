@@ -1,0 +1,9 @@
+package: github.com/sendgrid/solr-go
+import:
+- package: github.com/samuel/go-zookeeper
+  subpackages:
+  - zk
+- package: github.com/spaolacci/murmur3
+- package: github.com/zond/god
+  subpackages:
+  - murmur
