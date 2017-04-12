@@ -17,7 +17,6 @@ func init() {
 
 type Solr interface {
 	GetZookeepers() string
-	Connect() error
 	GetClusterState() (*ClusterState, error)
 	GetLeader(collection string, id string) (string, error)
 	Read(collection string, opts ...func(url.Values)) (SolrResponse, error)
@@ -65,11 +64,11 @@ func NewSolr(zookeepers string, zkRoot string, options ...func(*solrInstance)) (
 	}
 	instance.clusterStateMutex = &sync.Mutex{}
 	instance.currentNodeMutex = &sync.Mutex{}
-	instance.Connect()
-	return instance, nil
+	err = instance.connect()
+	return instance, err
 }
 
-func (s *solrInstance) Connect() error {
+func (s *solrInstance) connect() error {
 	if s.connected {
 		return nil
 	}
@@ -99,7 +98,6 @@ func (s *solrInstance) Update(docID string, collection string, updateOnly bool, 
 	}
 	return s.update(leader, collection, updateOnly, doc)
 }
-
 
 func (s *solrInstance) GetZookeepers() string {
 	return s.zookeeper.GetConnectionString()

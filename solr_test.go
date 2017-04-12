@@ -15,20 +15,14 @@ var _ = Describe("Solr Client", func() {
 	})
 	It("construct", func() {
 		solrClient, err := solr.NewSolr("test", "solr")
-		Expect(err).To(BeNil())
-		Expect(solrClient.GetZookeepers()).To(Equal("test"))
+		Expect(err).To(Not(BeNil()))
+		Expect(solrClient).To(Not(BeNil()))
+
 	})
 
 	Describe("Test Connection", func() {
 
-		It("can init", func() {
-			err := solrClient.Connect()
-			Expect(err).To(BeNil())
-		})
-
 		It("can get clusterstate", func() {
-			err := solrClient.Connect()
-			Expect(err).To(BeNil())
 			state, err := solrClient.GetClusterState()
 			Expect(err).To(BeNil())
 			Expect(state).To(Not(BeNil()))
@@ -36,8 +30,6 @@ var _ = Describe("Solr Client", func() {
 		})
 
 		It("can find a leader", func() {
-			err := solrClient.Connect()
-			Expect(err).To(BeNil())
 			state, err := solrClient.GetClusterState()
 			Expect(err).To(BeNil())
 			Expect(state).To(Not(BeNil()))
