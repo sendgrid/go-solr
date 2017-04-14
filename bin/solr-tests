@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+until curl -sL -w "%{http_code}\\n" "http://solr1:8983/solr/solrtest/select?indent=on&q=*:*&wt=json" -o /dev/null | grep '200'
+do
+    echo "waiting for solr cloud"
+    sleep 1
+done
+echo "cloud started"
+LN_OUTPUT=stderr go test
+

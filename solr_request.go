@@ -8,12 +8,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strconv"
-	"strings"
 )
-
-var bucketExp = regexp.MustCompile(`_yz_rb:([_a-z0-9]*)`)
 
 func (c *solrInstance) update(host string, collection string, updateOnly bool, doc interface{}) error {
 	uri := fmt.Sprintf("%s/solr/%s/update", host, collection)
@@ -76,20 +72,11 @@ func (c *solrInstance) update(host string, collection string, updateOnly bool, d
 	return nil
 }
 
-func (c *solrInstance) read(host string, collection string, opts []func(url.Values)) (SolrResponse, error) {
+func (c *solrInstance) read(host string, collection string, urlValues url.Values) (SolrResponse, error) {
 	var sr SolrResponse
-	u := fmt.Sprintf("%s/solr/%s/select", host, collection)
-
-	p := url.Values{
-		"wt": {"json"},
-	}
-	for _, opt := range opts {
-		opt(p)
-	}
-
-	c.addRoute(p)
-
-	req, err := http.NewRequest("POST", u, bytes.NewBufferString(p.Encode()))
+	u := fmt.Sprintf("%s/%s/select", host, collection)
+	fmt.Println(fmt.Sprintf("Reading from %s", u))
+	req, err := http.NewRequest("POST", u, bytes.NewBufferString(urlValues.Encode()))
 	if err != nil {
 		return sr, err
 	}
@@ -143,44 +130,44 @@ func getidChunks(in []string, chunkSize int) [][]string {
 	return out
 }
 
-func query(q string) func(url.Values) {
+func Query(q string) func(url.Values) {
 	return func(p url.Values) {
 		p["q"] = []string{q}
 	}
 }
 
 //Helper funcs for setting the solr query params
-func filterQuery(fq string) func(url.Values) {
+func FilterQuery(fq string) func(url.Values) {
 	return func(p url.Values) {
 		p["fq"] = []string{fq}
 	}
 }
 
-func rows(rows uint32) func(url.Values) {
+func Rows(rows uint32) func(url.Values) {
 	return func(p url.Values) {
 		p["rows"] = []string{strconv.FormatUint(uint64(rows), 10)}
 	}
 }
 
-func route(r string) func(url.Values) {
+func Route(r string) func(url.Values) {
 	return func(p url.Values) {
 		p["_route_"] = []string{r}
 	}
 }
 
-func start(start uint32) func(url.Values) {
+func Start(start uint32) func(url.Values) {
 	return func(p url.Values) {
 		p["start"] = []string{strconv.FormatUint(uint64(start), 10)}
 	}
 }
 
-func sort(s string) func(url.Values) {
+func Sort(s string) func(url.Values) {
 	return func(p url.Values) {
 		p["sort"] = []string{s}
 	}
 }
 
-func cursor(c string) func(url.Values) {
+func Cursor(c string) func(url.Values) {
 	return func(p url.Values) {
 		p["cursorMark"] = []string{c}
 	}
@@ -192,33 +179,4 @@ func (c *solrInstance) getBasicCredential(user string, password string) string {
 		return b64.StdEncoding.EncodeToString([]byte(userPass))
 	}
 	return ""
-}
-
-func (c *solrInstance) addRoute(params url.Values) {
-	var s string
-	for _, values := range params {
-		for _, v := range values {
-			if strings.Contains(v, "_yz_rb") {
-				s = v
-			}
-		}
-	}
-
-	if len(s) == 0 {
-		return
-	}
-
-	r := c.getRoute(s)
-	if len(r) > 0 {
-		params.Set("_route_", r)
-	}
-}
-
-func (c *solrInstance) getRoute(s string) string {
-	matches := bucketExp.FindStringSubmatch(s)
-	var r string
-	if len(matches) > 1 {
-		r = matches[1] + "!"
-	}
-	return r
 }

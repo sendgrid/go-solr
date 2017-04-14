@@ -8,19 +8,23 @@ type SolrResponse struct {
 		Indent string `json:"indent"`
 		Wt     string `json:"wt"`
 	} `json:"params"`
-	Response struct {
-		NumFound uint32 `json:"numFound"`
-		Start    int    `json:"start"`
-		Docs     []Doc  `json:"docs"`
-	} `json:"response"`
-	NextCursorMark string `json:"nextCursorMark"`
-	Adds           Adds   `json:"adds"`
+	Response       Response `json:"response"`
+	NextCursorMark string   `json:"nextCursorMark"`
+	Adds           Adds     `json:"adds"`
 }
 
-type Doc struct {
-	ID      string `json:"id"`
-	Version int    `json:"_version_"`
-	Email   string `json:"email_sort"`
+type Response struct {
+	NumFound uint32                   `json:"numFound"`
+	Start    int                      `json:"start"`
+	Docs     []map[string]interface{} `json:"docs"`
+}
+
+func GetDocIdFromDoc(m map[string]interface{}) string {
+	return m["id"].(string)
+}
+
+func GetVersionFromDoc(m map[string]interface{}) int {
+	return m["_version_"].(int)
 }
 
 type Adds map[string]int

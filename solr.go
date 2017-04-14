@@ -3,8 +3,10 @@ package solr
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"sync"
@@ -17,15 +19,18 @@ func init() {
 
 type Solr interface {
 	GetZookeepers() string
-	GetClusterState() (*ClusterState, error)
-	GetLeader(collection string, id string) (string, error)
-	Read(collection string, opts ...func(url.Values)) (SolrResponse, error)
-	Update(docID string, collection string, updateOnly bool, doc interface{}) error
+	GetClusterState() (ClusterState, error)
+	GetLeader(id string) (string, error)
+	Read(opts ...func(url.Values)) (SolrResponse, error)
+	Update(docID string, updateOnly bool, doc interface{}) error
+	Listen() error
+	FindLiveReplicaUrls(key string) ([]string, error)
+	FindReplicaForRoute(key string) (string, error)
 }
 
 type solrInstance struct {
 	zookeeper         Zookeeper
-	zkRoot            string
+	collection        string
 	host              string
 	cert              string
 	queryClient       HTTPer
@@ -35,15 +40,16 @@ type solrInstance struct {
 	password          string
 	batchSize         int
 	minRf             int
+	useHttps          bool
+	baseUrl           string
 	currentNode       int
-	clusterState      *ClusterState
+	clusterState      ClusterState
 	clusterStateMutex *sync.Mutex
 	currentNodeMutex  *sync.Mutex
-	connected         bool
 }
 
-func NewSolr(zookeepers string, zkRoot string, options ...func(*solrInstance)) (Solr, error) {
-	instance := &solrInstance{zookeeper: NewZookeeper(zookeepers), zkRoot: zkRoot, connected: false}
+func NewSolr(zookeepers string, zkRoot string, collectionName string, options ...func(*solrInstance)) (Solr, error) {
+	instance := &solrInstance{zookeeper: NewZookeeper(zookeepers, zkRoot, collectionName), collection: collectionName, baseUrl: "solr", useHttps: false}
 
 	for _, opt := range options {
 		opt(instance)
@@ -62,53 +68,76 @@ func NewSolr(zookeepers string, zkRoot string, options ...func(*solrInstance)) (
 			return nil, err
 		}
 	}
+
 	instance.clusterStateMutex = &sync.Mutex{}
 	instance.currentNodeMutex = &sync.Mutex{}
-	err = instance.connect()
 	return instance, err
 }
 
-func (s *solrInstance) connect() error {
-	if s.connected {
-		return nil
+func (s *solrInstance) Read(opts ...func(url.Values)) (SolrResponse, error) {
+	var node string
+	urlVals := url.Values{
+		"wt": {"json"},
 	}
-	err := s.zookeeper.Connect()
-	s.currentNode = 0
-	if err != nil {
-		return err
+	for _, opt := range opts {
+		opt(urlVals)
 	}
-	s.clusterState, err = s.zookeeper.GetClusterState(s.zkRoot)
-	if err != nil {
-		return err
+	//if contains route don't round robin
+	if route, ok := urlVals["_route_"]; ok {
+		var err error
+		node, err = s.FindReplicaForRoute(route[0])
+		if err != nil {
+			return SolrResponse{}, err
+		}
+
+	} else {
+		protocol := "http"
+		if s.useHttps {
+			protocol = "https"
+		}
+		node = fmt.Sprintf("%s://%s/%s", protocol, s.getNextNode(), s.baseUrl)
 	}
-	go s.pollForState()
-	s.connected = true
-	return nil
+
+	return s.read(node, s.collection, urlVals)
 }
 
-func (s *solrInstance) Read(collection string, opts ...func(url.Values)) (SolrResponse, error) {
-	node := s.getNextNode()
-	return s.read(node, collection, opts)
+func (s *solrInstance) FindReplicaForRoute(shardKey string) (string, error) {
+	replicas, err := s.FindLiveReplicaUrls(shardKey)
+	if err != nil {
+		return "", err
+	}
+	//pick a random node
+	node := replicas[rand.Intn(len(replicas))]
+	return node, nil
 }
-func (s *solrInstance) Update(docID string, collection string, updateOnly bool, doc interface{}) error {
-	collectionInstance := s.clusterState.Collections[collection]
+
+func (s *solrInstance) FindLiveReplicaUrls(key string) ([]string, error) {
+	collection, ok := s.clusterState.Collections[s.collection]
+	if !ok {
+		return nil, fmt.Errorf("Collection %s does not exist ", s.collection)
+	}
+	return findLiveReplicaUrls(key, &collection)
+}
+
+func (s *solrInstance) Update(docID string, updateOnly bool, doc interface{}) error {
+	collectionInstance := s.clusterState.Collections[s.collection]
 	leader, err := findLeader(docID, &collectionInstance)
 	if err != nil {
 		return err
 	}
-	return s.update(leader, collection, updateOnly, doc)
+	return s.update(leader, s.collection, updateOnly, doc)
 }
 
 func (s *solrInstance) GetZookeepers() string {
 	return s.zookeeper.GetConnectionString()
 }
 
-func (s *solrInstance) GetLeader(collection string, id string) (string, error) {
+func (s *solrInstance) GetLeader(id string) (string, error) {
 	cs, err := s.GetClusterState()
 	if err != nil {
 		return "", err
 	}
-	collectionMap := cs.Collections[collection]
+	collectionMap := cs.Collections[s.collection]
 	leader, err := findLeader(id, &collectionMap)
 	return leader, err
 }
@@ -154,9 +183,15 @@ func BatchSize(size int) func(*solrInstance) {
 	}
 }
 
-func ZkzkRoot(zkzkRoot string) func(*solrInstance) {
+func UseHttps(useHttps bool) func(*solrInstance) {
 	return func(c *solrInstance) {
-		c.zkRoot = zkzkRoot
+		c.useHttps = useHttps
+	}
+}
+
+func BaseUrl(baseUrl string) func(*solrInstance) {
+	return func(c *solrInstance) {
+		c.baseUrl = baseUrl
 	}
 }
 

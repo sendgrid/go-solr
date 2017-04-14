@@ -1,14 +1,11 @@
-hash: 6a2bbb1f04caf6c250c8d1f8bbea7a1db9cec5f83f6d2c0c18eb43c352e3a03a
-updated: 2017-04-10T13:02:58.319712565-06:00
+hash: 7cf1a1730181b6afddc7765cd06a1d8e2a9cf4113ac4cab68b83ab0ae603aaf4
+updated: 2017-04-13T16:16:55.481922751-06:00
 imports:
 - name: github.com/samuel/go-zookeeper
   version: 1d7be4effb13d2d908342d349d71a284a7542693
   subpackages:
   - zk
+  - tree/master/zk
 - name: github.com/spaolacci/murmur3
   version: 0d12bf811670bf6a1a63828dfbd003eded177fce
-- name: github.com/zond/god
-  version: eb47e4398c336499cd173d12be8cbca194f23c04
-  subpackages:
-  - murmur
 testImports: []

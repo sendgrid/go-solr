@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+echo 'maxClientCnxns=0' >> /opt/zookeeper-3.4.6/conf/zoo.cfg
+bash /usr/bin/start-zk.sh

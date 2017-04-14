@@ -12,6 +12,8 @@ import (
 type zookeeper struct {
 	connectionString string
 	zkConnection     *zk.Conn
+	collection       string
+	zkRoot           string
 	pollSleep        time.Duration
 }
 
@@ -22,12 +24,14 @@ type Zookeeper interface {
 	GetConnectionString() string
 	Get(path string) ([]byte, error)
 	Poll(path string, cb stateChanged)
-	GetClusterState(root string) (*ClusterState, error)
-	PollForClusterState(root string, cb func(*ClusterState, error))
+	GetClusterState() (map[string]Collection, error)
+	GetClusterStateW() (map[string]Collection, <-chan zk.Event, error)
+	GetLiveNodes() ([]string, error)
+	GetLiveNodesW() ([]string, <-chan zk.Event, error)
 }
 
-func NewZookeeper(connectionString string) Zookeeper {
-	return &zookeeper{connectionString: connectionString, pollSleep: time.Duration(1) * time.Second}
+func NewZookeeper(connectionString string, zkRoot string, collection string) Zookeeper {
+	return &zookeeper{connectionString: connectionString, zkRoot: zkRoot, collection: collection, pollSleep: time.Duration(1) * time.Second}
 }
 
 func (z *zookeeper) Connect() error {
@@ -61,46 +65,64 @@ func (z *zookeeper) Poll(path string, cb stateChanged) {
 	}
 }
 
-func (z *zookeeper) GetClusterState(root string) (*ClusterState, error) {
-	node, err := z.Get(z.getClusterStatePath(root))
+func (z *zookeeper) GetClusterStateW() (map[string]Collection, <-chan zk.Event, error) {
+	node, _, events, err := z.zkConnection.GetW(z.getClusterStatePath(z.zkRoot, z.collection))
 	if err != nil {
-		return &ClusterState{}, err
+		return nil, events, err
+	}
+	cs, err := deserializeClusterState(node)
+	if err != nil {
+		return cs, events, err
+	}
+	return cs, events, nil
+}
+
+func (z *zookeeper) GetClusterState() (map[string]Collection, error) {
+	node, _, err := z.zkConnection.Get(z.getClusterStatePath(z.zkRoot, z.collection))
+	if err != nil {
+		return nil, err
 	}
 	cs, err := deserializeClusterState(node)
 	if err != nil {
 		return cs, err
 	}
-	children, _, err := z.zkConnection.Children(fmt.Sprintf("/%s/live_nodes", root))
+	return cs, nil
+}
+
+func (z *zookeeper) GetLiveNodesW() ([]string, <-chan zk.Event, error) {
+	children, _, events, err := z.zkConnection.ChildrenW(z.getLiveNodesPath(z.zkRoot))
 	if err != nil {
-		return cs, err
+		return children, events, err
 	}
 	for i, node := range children {
 		children[i] = strings.Replace(node, "_solr", "", -1)
 	}
-	cs.LiveNodes = children
-	return cs, nil
+	return children, events, nil
 }
 
-func (z *zookeeper) PollForClusterState(root string, cb func(*ClusterState, error)) {
-	for {
-		clusterState, err := z.GetClusterState(root)
-		if err != nil {
-			cb(clusterState, nil)
-
-		}
-		cb(clusterState, nil)
-		time.Sleep(z.pollSleep)
+func (z *zookeeper) GetLiveNodes() ([]string, error) {
+	children, _, err := z.zkConnection.Children(z.getLiveNodesPath(z.zkRoot))
+	if err != nil {
+		return children, err
 	}
+	for i, node := range children {
+		children[i] = strings.Replace(node, "_solr", "", -1)
+	}
+	return children, nil
 }
-func deserializeClusterState(node []byte) (*ClusterState, error) {
+
+func (z *zookeeper) getLiveNodesPath(root string) string {
+	return fmt.Sprintf("/%s/live_nodes", root)
+}
+func deserializeClusterState(node []byte) (map[string]Collection, error) {
 	var collections map[string]Collection
 	decoder := json.NewDecoder(bytes.NewBuffer(node))
 	if err := decoder.Decode(&collections); err != nil {
-		return &ClusterState{}, err
+		return nil, err
 	}
-	return &ClusterState{Collections: collections}, nil
+	return collections, nil
 }
 
-func (z *zookeeper) getClusterStatePath(root string) string {
-	return fmt.Sprintf("/%s/collections/goseg/state.json", root)
+func (z *zookeeper) getClusterStatePath(root string, collection string) string {
+	return fmt.Sprintf("/%s/collections/%s/state.json", root, collection)
 }
