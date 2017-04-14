@@ -22,7 +22,7 @@ type Solr interface {
 	GetClusterState() (ClusterState, error)
 	GetLeader(id string) (string, error)
 	Read(opts ...func(url.Values)) (SolrResponse, error)
-	Update(docID string, updateOnly bool, doc interface{}) error
+	Update(docID string, updateOnly bool, doc interface{}, opts ...func(url.Values)) error
 	Listen() error
 	FindLiveReplicaUrls(key string) ([]string, error)
 	FindReplicaForRoute(key string) (string, error)
@@ -49,7 +49,7 @@ type solrInstance struct {
 }
 
 func NewSolr(zookeepers string, zkRoot string, collectionName string, options ...func(*solrInstance)) (Solr, error) {
-	instance := &solrInstance{zookeeper: NewZookeeper(zookeepers, zkRoot, collectionName), collection: collectionName, baseUrl: "solr", useHttps: false}
+	instance := &solrInstance{zookeeper: NewZookeeper(zookeepers, zkRoot, collectionName), minRf: 1, collection: collectionName, baseUrl: "solr", useHttps: false}
 
 	for _, opt := range options {
 		opt(instance)
@@ -119,13 +119,20 @@ func (s *solrInstance) FindLiveReplicaUrls(key string) ([]string, error) {
 	return findLiveReplicaUrls(key, &collection)
 }
 
-func (s *solrInstance) Update(docID string, updateOnly bool, doc interface{}) error {
+func (s *solrInstance) Update(docID string, updateOnly bool, doc interface{}, opts ...func(url.Values)) error {
 	collectionInstance := s.clusterState.Collections[s.collection]
 	leader, err := findLeader(docID, &collectionInstance)
 	if err != nil {
 		return err
 	}
-	return s.update(leader, s.collection, updateOnly, doc)
+
+	urlVals := url.Values{
+		"min_rf": {fmt.Sprintf("%d", s.minRf)},
+	}
+	for _, opt := range opts {
+		opt(urlVals)
+	}
+	return s.update(leader, s.collection, updateOnly, doc, urlVals)
 }
 
 func (s *solrInstance) GetZookeepers() string {

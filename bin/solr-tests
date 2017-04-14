@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-until curl -sL -w "%{http_code}\\n" "http://solr1:8983/solr/solrtest/select?indent=on&q=*:*&wt=json" -o /dev/null | grep '200'
+until curl -sL -w "%{http_code}\\n" "http://solr:admin@solr1:8983/solr/solrtest/select?indent=on&q=*:*&wt=json" -o /dev/null | grep '200'
 do
     echo "waiting for solr cloud"
     sleep 1

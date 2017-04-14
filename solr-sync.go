@@ -1,8 +1,8 @@
 package solr
 
 import (
-	"fmt"
 	"github.com/samuel/go-zookeeper/zk"
+	"log"
 )
 
 func (s *solrInstance) Listen() error {
@@ -35,7 +35,7 @@ func (s *solrInstance) Listen() error {
 					s.setCollections(collections)
 				}
 				if cEvent.State < zk.StateConnected {
-					fmt.Println(fmt.Sprintf("disconnected zkState: %d", cEvent.State))
+					log.Printf("disconnected zkState: %d", cEvent.State)
 				}
 			case nEvent := <-liveNodeEvents:
 				// do something if its not a session or disconnect
@@ -47,7 +47,7 @@ func (s *solrInstance) Listen() error {
 					s.setLiveNodes(liveNodes)
 				}
 				if nEvent.State < zk.StateConnected {
-					fmt.Println(fmt.Sprintf("disconnected zkState: %d", nEvent.State))
+					log.Printf("disconnected zkState: %d", nEvent.State)
 				}
 			}
 		}
