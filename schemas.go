@@ -12,7 +12,7 @@ type HTTPer interface {
 
 type CompositeKey struct {
 	ShardKey string
-	DocId    string
+	DocID    string
 }
 
 type HashRange struct {
@@ -24,11 +24,15 @@ func NewCompositeKey(id string) (CompositeKey, error) {
 	keys := strings.Split(id, "!")
 
 	if len(keys) == 1 {
-		return CompositeKey{DocId: keys[0]}, nil
+		if strings.Index(id, "!") < 0 {
+			return CompositeKey{DocID: keys[0]}, nil
+		} else {
+			return CompositeKey{ShardKey: id}, nil
+		}
 	}
 
 	if len(keys) == 2 {
-		return CompositeKey{ShardKey: keys[0], DocId: keys[1]}, nil
+		return CompositeKey{ShardKey: keys[0], DocID: keys[1]}, nil
 	}
 
 	if len(keys) > 2 {

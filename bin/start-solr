@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+until solr zk ls / -z zk:2181
+do
+    echo "waiting for zookeeper"
+    sleep 1
+done
+
+solr zk mkroot /solr -z zk:2181
+
+solr start -f -z zk:2181/solr > /opt/solr/solrtest/solr.log &
+
+until curl localhost:8983
+do
+    echo "waiting for solr"
+    sleep 1
+done
+
+solr zk -upconfig -d /opt/solr/solrtest -n solrtest -z zk:2181/solr
+sleep 1
+solr create_collection -c solrtest -n solrtest -shards 4 -replicationFactor 2
+tail -f /opt/solr/solrtest/solr.log
