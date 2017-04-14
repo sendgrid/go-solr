@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 )
 
-func (c *solrInstance) update(host string, collection string, updateOnly bool, doc interface{}) error {
-	uri := fmt.Sprintf("%s/solr/%s/update", host, collection)
+func (c *solrInstance) update(host string, collection string, updateOnly bool, doc interface{}, urlValues url.Values) error {
+	uri := fmt.Sprintf("%s/%s/update", host, collection)
 	if updateOnly {
 		uri += "/json/docs"
 	}
@@ -28,10 +29,7 @@ func (c *solrInstance) update(host string, collection string, updateOnly bool, d
 		return err
 	}
 
-	p := url.Values{
-		"min_rf": {fmt.Sprintf("%d", c.minRf)},
-	}
-	req.URL.RawQuery = p.Encode()
+	req.URL.RawQuery = urlValues.Encode()
 
 	req.Header.Add("Content-Type", "application/json")
 	basicCred := c.getBasicCredential(c.user, c.password)
@@ -75,8 +73,9 @@ func (c *solrInstance) update(host string, collection string, updateOnly bool, d
 func (c *solrInstance) read(host string, collection string, urlValues url.Values) (SolrResponse, error) {
 	var sr SolrResponse
 	u := fmt.Sprintf("%s/%s/select", host, collection)
-	fmt.Println(fmt.Sprintf("Reading from %s", u))
-	req, err := http.NewRequest("POST", u, bytes.NewBufferString(urlValues.Encode()))
+	body := bytes.NewBufferString(urlValues.Encode())
+	req, err := http.NewRequest("POST", u, body)
+	log.Printf("Reading from %s %v", u, body)
 	if err != nil {
 		return sr, err
 	}
@@ -92,6 +91,7 @@ func (c *solrInstance) read(host string, collection string, urlValues url.Values
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
+		sr.Status = 404
 		return sr, ErrNotFound
 	}
 	if resp.StatusCode >= 400 {
@@ -99,6 +99,7 @@ func (c *solrInstance) read(host string, collection string, urlValues url.Values
 		if err != nil {
 			return sr, err
 		}
+		sr.Status = resp.StatusCode
 		return sr, NewSolrError(resp.StatusCode, string(htmlData))
 	}
 
@@ -164,6 +165,16 @@ func Start(start uint32) func(url.Values) {
 func Sort(s string) func(url.Values) {
 	return func(p url.Values) {
 		p["sort"] = []string{s}
+	}
+}
+
+func Commit(commit bool) func(url.Values) {
+	return func(p url.Values) {
+		commitString := "false"
+		if commit {
+			commitString = "true"
+		}
+		p["commit"] = []string{commitString}
 	}
 }
 

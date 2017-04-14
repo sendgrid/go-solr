@@ -1,55 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <schema name="recipient" version="1.6">
   <field name="_version_" type="long" indexed="true" stored="true" />
-  <field name="_root_" omitNorms="true" type="string" indexed="true" stored="false" docValues="false" />
+  <field name="_root_" type="string" indexed="true" stored="true" docValues="true" />
   <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false" omitNorms="true"/>
-  <field name="_yz_rb" omitNorms="true" type="string" indexed="true" stored="false" required="true" multiValued="false"/>
-  <field name="paging_register" omitNorms="true" type="long" indexed="true" stored="false" docValues="false"/>
-  <field name="lists_set" omitNorms="true" type="string" indexed="true" stored="false" multiValued="true" />
-  <field name="campaigns_set" omitNorms="true" type="string" indexed="true" stored="false" multiValued="true" />
-  <field name="email_register" omitNorms="true" type="lowercase_string" required="true" indexed="true" docValues="false" stored="false"/>
-  <field name="email_sort" omitNorms="true" type="string" required="true" indexed="true" docValues="true" stored="false"/>
-  <field name="first_name_register" omitNorms="true"  type="lowercase_string" indexed="true" docValues="false" stored="false"/>
-  <field name="first_name_sort" omitNorms="true" type="string" indexed="true" docValues="true" stored="false"/>
-  <field name="last_name_register" omitNorms="true" type="lowercase_string" indexed="true" docValues="false" stored="false"/>
-  <field name="last_name_sort" omitNorms="true" type="string" indexed="true" docValues="true" stored="false"/>
-  <field name="created_at_register" omitNorms="true" type="date" indexed="true" stored="false" docValues="true"/>
-  <field name="updated_at_register" omitNorms="true" type="date" indexed="true" stored="false" docValues="true"/>
-  <field name="last_emailed_register" omitNorms="true" type="date" indexed="true" stored="false" docValues="true"/>
-  <field name="last_clicked_register" omitNorms="true" type="date" indexed="true" stored="false" docValues="true"/>
-  <field name="last_opened_register" omitNorms="true" type="date" indexed="true" stored="false" docValues="true"/>
-  <copyField source="email_register" omitNorms="true" dest="email_sort" maxChars="30000"/>
-  <copyField source="first_name_register" omitNorms="true" dest="first_name_sort" maxChars="30000"/>
-  <copyField source="last_name" omitNorms="true" dest="last_name_sort" maxChars="30000"/>
-
-  <dynamicField name="*_t_register" omitNorms="true" type="lowercase_string" indexed="true" stored="false" docValues="false" />
-  <dynamicField name="*_d_register" omitNorms="true" type="date" indexed="true" stored="false" docValues="false"/>
-  <dynamicField name="*_n_register" omitNorms="true" type="float" indexed="true" stored="false" docValues="false"/>
-
-  <!-- contained in the enagement_map -->
-  <dynamicField name="*_click_register" omitNorms="true" type="date" indexed="true" stored="false" docValues="false"/>
-  <dynamicField name="*_open_register" omitNorms="true" type="date" indexed="true" stored="false" docValues="false"/>
-  <dynamicField name="*" type="ignored" />
+  <field name="lists" type="string" indexed="true" stored="true" multiValued="true" />
+  <field name="email" type="string" required="true" indexed="true" docValues="true" stored="true"/>
+  <field name="first_name" type="string" indexed="true" docValues="true" stored="true"/>
+  <field name="last_name" type="string" indexed="true" docValues="true" stored="true"/>
+  <field name="created_at" type="date" indexed="true" stored="true" docValues="true"/>
+  <field name="updated_at" type="date" indexed="true" stored="true" docValues="true"/>
 
   <uniqueKey>id</uniqueKey>
 
   <!-- YZ String: Used for non-analyzed fields -->
-  <fieldtype name="ignored" stored="false" indexed="false" multiValued="true" class="solr.StrField" />
+  <fieldtype name="ignored" stored="true" indexed="false" multiValued="true" class="solr.StrField" />
   <fieldType name="string" class="solr.StrField" sortMissingLast="true" />
   <fieldType name="float" class="solr.TrieFloatField" precisionStep="2147483647"/>
   <fieldType name="int" class="solr.TrieIntField" precisionStep="2147483647" />
   <fieldType name="long" class="solr.TrieLongField" precisionStep="2147483647" positionIncrementGap="0"/>
   <fieldType name="date" class="solr.TrieDateField" sortMissingLast="true" precisionStep="6"/>
-  <fieldType name="lowercase_string" class="solr.TextField" positionIncrementGap="100">
-    <analyzer>
-      <tokenizer class="solr.WhitespaceTokenizerFactory"/>
-      <filter class="solr.LowerCaseFilterFactory"/>
-      <filter class="solr.WordDelimiterFilterFactory"
-        splitOnCaseChange="0"
-        splitOnNumerics="0"
-        stemEnglishPossessive="0"
-        preserveOriginal="1"
-      />
-    </analyzer>
-  </fieldType>
 </schema>
