@@ -202,6 +202,12 @@ func BaseUrl(baseUrl string) func(*solrInstance) {
 	}
 }
 
+func MinRF(minRf int) func(*solrInstance) {
+	return func(c *solrInstance) {
+		c.minRf = minRf
+	}
+}
+
 func DefaultWriteClient(cert string) (HTTPer, error) {
 	cli := &http.Client{
 		Timeout: time.Duration(30) * time.Second,
