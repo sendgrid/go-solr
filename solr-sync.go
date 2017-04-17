@@ -93,7 +93,7 @@ func (s *solrInstance) setCollections(collections map[string]Collection) {
 	s.clusterState.Collections = collections
 }
 
-func (s *solrInstance) getNextNode() string {
+func (s *solrInstance) GetNextReadHost() string {
 	s.currentNodeMutex.Lock()
 	defer s.currentNodeMutex.Unlock()
 	node := s.clusterState.LiveNodes[s.currentNode]

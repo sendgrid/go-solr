@@ -85,7 +85,7 @@ var _ = Describe("Solr Client", func() {
 
 		Describe("Test Requests", func() {
 			It("can get requests", func() {
-				r, err := solrClient.Read(solr.FilterQuery("*:*"), solr.Rows(10))
+				r, err := solrClient.SolrHttp().Read(solr.FilterQuery("*:*"), solr.Rows(10))
 				Expect(err).To(BeNil())
 				Expect(r).To(Not(BeNil()))
 			})
@@ -98,9 +98,9 @@ var _ = Describe("Solr Client", func() {
 					"first_name": "shawn1" + uuid,
 					"last_name":  uuid + "feldman1",
 				}
-				err := solrClient.Update(doc["id"].(string), true, doc, solr.Commit(true))
+				err := solrClient.SolrHttp().Update(doc["id"].(string), true, doc, solr.Commit(true))
 				Expect(err).To(BeNil())
-				r, err := solrClient.Read(solr.Query("*:*"), solr.FilterQuery("first_name:shawn1"+uuid), solr.Rows(10))
+				r, err := solrClient.SolrHttp().Read(solr.Query("*:*"), solr.FilterQuery("first_name:shawn1"+uuid), solr.Rows(10))
 				Expect(err).To(BeNil())
 				Expect(r).To(Not(BeNil()))
 				fmt.Println(r.Response.Docs)
@@ -115,9 +115,9 @@ var _ = Describe("Solr Client", func() {
 					"first_name": "shawn3" + uuid,
 					"last_name":  uuid,
 				}
-				err := solrClient.Update(doc["id"].(string), true, doc, solr.Commit(true))
+				err := solrClient.SolrHttp().Update(doc["id"].(string), true, doc, solr.Commit(true))
 				Expect(err).To(BeNil())
-				r, err := solrClient.Read(solr.Route("mycrazyshardkey2!"), solr.Query("*:*"), solr.FilterQuery("last_name:"+uuid), solr.Rows(10))
+				r, err := solrClient.SolrHttp().Read(solr.Route("mycrazyshardkey2!"), solr.Query("*:*"), solr.FilterQuery("last_name:"+uuid), solr.Rows(10))
 				Expect(err).To(BeNil())
 				Expect(r).To(Not(BeNil()))
 				Expect(r.Response.NumFound).To(BeEquivalentTo(1))
@@ -135,15 +135,15 @@ var _ = Describe("Solr Client", func() {
 						"last_name":  uuid,
 					}
 					if i < limit-1 {
-						err := solrClient.Update(doc["id"].(string), true, doc, solr.Commit(false))
+						err := solrClient.SolrHttp().Update(doc["id"].(string), true, doc, solr.Commit(false))
 						Expect(err).To(BeNil())
 					} else {
-						err := solrClient.Update(doc["id"].(string), true, doc, solr.Commit(true))
+						err := solrClient.SolrHttp().Update(doc["id"].(string), true, doc, solr.Commit(true))
 						Expect(err).To(BeNil())
 					}
 
 				}
-				r, err := solrClient.Read(solr.Route("mycrazyshardkey4!"), solr.Query("*:*"), solr.FilterQuery("last_name:"+uuid), solr.Rows(1000))
+				r, err := solrClient.SolrHttp().Read(solr.Route("mycrazyshardkey4!"), solr.Query("*:*"), solr.FilterQuery("last_name:"+uuid), solr.Rows(1000))
 				Expect(err).To(BeNil())
 				Expect(r).To(Not(BeNil()))
 				Expect(r.Response.NumFound).To(BeEquivalentTo(limit))
@@ -156,7 +156,7 @@ var _ = Describe("Solr Client", func() {
 				Expect(err).To(BeNil())
 				err = solrNoAuthClient.Listen()
 				Expect(err).To(BeNil())
-				r, err := solrNoAuthClient.Read(solr.FilterQuery("*:*"), solr.Rows(10))
+				r, err := solrNoAuthClient.SolrHttp().Read(solr.FilterQuery("*:*"), solr.Rows(10))
 				Expect(strings.Contains(err.Error(), "401")).To(BeTrue())
 				Expect(r.Status).To(BeEquivalentTo(401))
 			})
