@@ -25,15 +25,6 @@ type solrInstance struct {
 	zookeeper         Zookeeper
 	collection        string
 	host              string
-	cert              string
-	queryClient       HTTPer
-	writeClient       HTTPer
-	defaultRows       uint32
-	user              string
-	password          string
-	batchSize         int
-	minRf             int
-	useHttps          bool
 	baseUrl           string
 	currentNode       int
 	clusterState      ClusterState
@@ -42,17 +33,13 @@ type solrInstance struct {
 	currentNodeMutex  *sync.Mutex
 }
 
-func NewSolr(zookeepers string, zkRoot string, collectionName string, options ...func(*solrInstance)) (Solr, error) {
-	instance := solrInstance{zookeeper: NewZookeeper(zookeepers, zkRoot, collectionName), minRf: 1, collection: collectionName, baseUrl: "solr", useHttps: false}
+func NewSolr(zookeepers string, zkRoot string, collectionName string, options ...func(*solrHttp)) (Solr, error) {
+	instance := solrInstance{zookeeper: NewZookeeper(zookeepers, zkRoot, collectionName), collection: collectionName}
 
-	for _, opt := range options {
-		opt(&instance)
-	}
 	instance.clusterStateMutex = &sync.Mutex{}
 	instance.currentNodeMutex = &sync.Mutex{}
 	var err error
-	instance.solrHttp, err = NewSolrHttp(&instance, collectionName, instance.user, instance.password, instance.minRf, instance.baseUrl, instance.queryClient,
-		instance.writeClient, instance.cert, instance.useHttps)
+	instance.solrHttp, err = NewSolrHttp(&instance, collectionName, options...)
 	return &instance, err
 }
 
@@ -90,63 +77,4 @@ func (s *solrInstance) GetLeader(id string) (string, error) {
 	collectionMap := cs.Collections[s.collection]
 	leader, err := findLeader(id, &collectionMap)
 	return leader, err
-}
-
-//HTTPClient sets the HTTPer
-func HTTPClient(cli HTTPer) func(*solrInstance) {
-	return func(c *solrInstance) {
-		c.queryClient = cli
-		c.writeClient = cli
-	}
-}
-
-//DefaultRows sets number of rows for pagination
-//in calls that don't pass a number of rows in
-func DefaultRows(rows uint32) func(*solrInstance) {
-	return func(c *solrInstance) {
-		c.defaultRows = rows
-	}
-}
-
-//The path to tls certificate (optional)
-func Cert(cert string) func(*solrInstance) {
-	return func(c *solrInstance) {
-		c.cert = cert
-	}
-}
-
-func User(user string) func(*solrInstance) {
-	return func(c *solrInstance) {
-		c.user = user
-	}
-}
-
-func Password(password string) func(*solrInstance) {
-	return func(c *solrInstance) {
-		c.password = password
-	}
-}
-
-func BatchSize(size int) func(*solrInstance) {
-	return func(c *solrInstance) {
-		c.batchSize = size
-	}
-}
-
-func UseHttps(useHttps bool) func(*solrInstance) {
-	return func(c *solrInstance) {
-		c.useHttps = useHttps
-	}
-}
-
-func BaseUrl(baseUrl string) func(*solrInstance) {
-	return func(c *solrInstance) {
-		c.baseUrl = baseUrl
-	}
-}
-
-func MinRF(minRf int) func(*solrInstance) {
-	return func(c *solrInstance) {
-		c.minRf = minRf
-	}
 }

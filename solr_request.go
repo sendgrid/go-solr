@@ -29,25 +29,32 @@ type solrHttp struct {
 	solrZk      Solr
 	useHttps    bool
 	collection  string
+	cert        string
+	defaultRows uint32
+	batchSize   int
+	minRf       int
 }
 
-func NewSolrHttp(solrZk Solr, collection string, user string, password string, minRf int, baseUrl string, queryClient HTTPer, writeClient HTTPer, cert string, useHttps bool) (SolrHttp, error) {
+func NewSolrHttp(solrZk Solr, collection string, options ...func(*solrHttp)) (SolrHttp, error) {
+	solrCli := solrHttp{solrZk: solrZk, collection: collection, minRF: 1, baseUrl: "solr", useHttps: false}
+	for _, opt := range options {
+		opt(&solrCli)
+	}
 	var err error
-	if writeClient == nil {
-		writeClient, err = defaultWriteClient(cert)
+	if solrCli.writeClient == nil {
+		solrCli.writeClient, err = defaultWriteClient(solrCli.cert)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if queryClient == nil {
-		queryClient, err = defaultReadClient(cert)
+	if solrCli.queryClient == nil {
+		solrCli.queryClient, err = defaultReadClient(solrCli.cert)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	solrCli := solrHttp{solrZk: solrZk, collection: collection, minRF: minRf, user: user, password: password, queryClient: queryClient, writeClient: writeClient, baseUrl: baseUrl, useHttps: useHttps}
 	return &solrCli, nil
 }
 
@@ -316,4 +323,63 @@ func (s *solrHttp) getBasicCredential(user string, password string) string {
 		return b64.StdEncoding.EncodeToString([]byte(userPass))
 	}
 	return ""
+}
+
+//HTTPClient sets the HTTPer
+func HTTPClient(cli HTTPer) func(*solrHttp) {
+	return func(c *solrHttp) {
+		c.queryClient = cli
+		c.writeClient = cli
+	}
+}
+
+//DefaultRows sets number of rows for pagination
+//in calls that don't pass a number of rows in
+func DefaultRows(rows uint32) func(*solrHttp) {
+	return func(c *solrHttp) {
+		c.defaultRows = rows
+	}
+}
+
+//The path to tls certificate (optional)
+func Cert(cert string) func(*solrHttp) {
+	return func(c *solrHttp) {
+		c.cert = cert
+	}
+}
+
+func User(user string) func(*solrHttp) {
+	return func(c *solrHttp) {
+		c.user = user
+	}
+}
+
+func Password(password string) func(*solrHttp) {
+	return func(c *solrHttp) {
+		c.password = password
+	}
+}
+
+func BatchSize(size int) func(*solrHttp) {
+	return func(c *solrHttp) {
+		c.batchSize = size
+	}
+}
+
+func UseHttps(useHttps bool) func(*solrHttp) {
+	return func(c *solrHttp) {
+		c.useHttps = useHttps
+	}
+}
+
+func BaseUrl(baseUrl string) func(*solrHttp) {
+	return func(c *solrHttp) {
+		c.baseUrl = baseUrl
+	}
+}
+
+func MinRF(minRf int) func(*solrHttp) {
+	return func(c *solrHttp) {
+		c.minRf = minRf
+	}
 }
