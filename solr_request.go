@@ -2,6 +2,8 @@ package solr
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -10,14 +12,63 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 )
 
-func (c *solrInstance) update(host string, collection string, updateOnly bool, doc interface{}, urlValues url.Values) error {
-	uri := fmt.Sprintf("%s/%s/update", host, collection)
+type SolrHttp interface {
+	Read(opts ...func(url.Values)) (SolrResponse, error)
+	Update(docID string, updateOnly bool, doc interface{}, opts ...func(url.Values)) error
+}
+type solrHttp struct {
+	minRF       int
+	user        string
+	password    string
+	baseUrl     string
+	queryClient HTTPer
+	writeClient HTTPer
+	solrZk      Solr
+	useHttps    bool
+	collection  string
+}
+
+func NewSolrHttp(solrZk Solr, collection string, user string, password string, minRf int, baseUrl string, queryClient HTTPer, writeClient HTTPer, cert string, useHttps bool) (SolrHttp, error) {
+	var err error
+	if writeClient == nil {
+		writeClient, err = defaultWriteClient(cert)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if queryClient == nil {
+		queryClient, err = defaultReadClient(cert)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	solrCli := solrHttp{solrZk: solrZk, collection: collection, minRF: minRf, user: user, password: password, queryClient: queryClient, writeClient: writeClient, baseUrl: baseUrl, useHttps: useHttps}
+	return &solrCli, nil
+}
+
+func (s *solrHttp) Update(docID string, updateOnly bool, doc interface{}, opts ...func(url.Values)) error {
+	leader, err := s.solrZk.GetLeader(docID)
+	if err != nil {
+		return err
+	}
+
+	urlVals := url.Values{
+		"min_rf": {fmt.Sprintf("%d", s.minRF)},
+	}
+	for _, opt := range opts {
+		opt(urlVals)
+	}
+
+	uri := fmt.Sprintf("%s/%s/update", leader, s.collection)
 	if updateOnly {
 		uri += "/json/docs"
 	}
-	var err error
+
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
 	if err := enc.Encode(doc); err != nil {
@@ -29,15 +80,15 @@ func (c *solrInstance) update(host string, collection string, updateOnly bool, d
 		return err
 	}
 
-	req.URL.RawQuery = urlValues.Encode()
+	req.URL.RawQuery = urlVals.Encode()
 
 	req.Header.Add("Content-Type", "application/json")
-	basicCred := c.getBasicCredential(c.user, c.password)
+	basicCred := s.getBasicCredential(s.user, s.password)
 	if basicCred != "" {
 		req.Header.Add("Authorization", fmt.Sprintf("Basic %s", basicCred))
 	}
 
-	resp, err := c.writeClient.Do(req)
+	resp, err := s.writeClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -70,9 +121,32 @@ func (c *solrInstance) update(host string, collection string, updateOnly bool, d
 	return nil
 }
 
-func (c *solrInstance) read(host string, collection string, urlValues url.Values) (SolrResponse, error) {
+func (s *solrHttp) Read(opts ...func(url.Values)) (SolrResponse, error) {
+	var host string
+	urlValues := url.Values{
+		"wt": {"json"},
+	}
+	for _, opt := range opts {
+		opt(urlValues)
+	}
+	//if contains route don't round robin
+	if route, ok := urlValues["_route_"]; ok {
+		var err error
+		host, err = s.solrZk.FindReplicaForRoute(route[0])
+		if err != nil {
+			return SolrResponse{}, err
+		}
+
+	} else {
+		protocol := "http"
+		if s.useHttps {
+			protocol = "https"
+		}
+		host = fmt.Sprintf("%s://%s/%s", protocol, s.solrZk.GetNextReadHost(), s.baseUrl)
+	}
+
 	var sr SolrResponse
-	u := fmt.Sprintf("%s/%s/select", host, collection)
+	u := fmt.Sprintf("%s/%s/select", host, s.collection)
 	body := bytes.NewBufferString(urlValues.Encode())
 	req, err := http.NewRequest("POST", u, body)
 	log.Printf("Reading from %s %v", u, body)
@@ -80,11 +154,11 @@ func (c *solrInstance) read(host string, collection string, urlValues url.Values
 		return sr, err
 	}
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	basicCred := c.getBasicCredential(c.user, c.password)
+	basicCred := s.getBasicCredential(s.user, s.password)
 	if basicCred != "" {
 		req.Header.Add("Authorization", fmt.Sprintf("Basic %s", basicCred))
 	}
-	resp, err := c.queryClient.Do(req)
+	resp, err := s.queryClient.Do(req)
 	if err != nil {
 		return sr, err
 	}
@@ -184,7 +258,59 @@ func Cursor(c string) func(url.Values) {
 	}
 }
 
-func (c *solrInstance) getBasicCredential(user string, password string) string {
+func UrlVals(urlVals url.Values) func(url.Values) {
+	return func(p url.Values) {
+		p = urlVals
+	}
+}
+
+func defaultWriteClient(cert string) (HTTPer, error) {
+	cli := &http.Client{
+		Timeout: time.Duration(30) * time.Second,
+	}
+	if cert != "" {
+		tlsConfig, err := getTLSConfig(cert)
+		if err != nil {
+			return nil, err
+		}
+		cli.Transport = &http.Transport{TLSClientConfig: tlsConfig, MaxIdleConnsPerHost: 10}
+	}
+	return cli, nil
+}
+
+func defaultReadClient(cert string) (HTTPer, error) {
+	cli := &http.Client{
+		Timeout: time.Duration(20) * time.Second,
+	}
+	if cert != "" {
+		tlsConfig, err := getTLSConfig(cert)
+		if err != nil {
+			return nil, err
+		}
+		cli.Transport = &http.Transport{TLSClientConfig: tlsConfig, MaxIdleConnsPerHost: 10}
+	}
+	return cli, nil
+}
+
+func getTLSConfig(certPath string) (*tls.Config, error) {
+	tlsConf := &tls.Config{InsecureSkipVerify: true}
+	if certPath != "" {
+		zkRootPEM, err := ioutil.ReadFile(certPath)
+		if err != nil {
+			return nil, err
+		}
+
+		zkRoots := x509.NewCertPool()
+		ok := zkRoots.AppendCertsFromPEM([]byte(zkRootPEM))
+		if !ok {
+			log.Fatal("failed to parse zkRoot certificate")
+		}
+		tlsConf.RootCAs = zkRoots
+	}
+	return tlsConf, nil
+}
+
+func (s *solrHttp) getBasicCredential(user string, password string) string {
 	if user != "" {
 		userPass := fmt.Sprintf("%s:%s", user, password)
 		return b64.StdEncoding.EncodeToString([]byte(userPass))
