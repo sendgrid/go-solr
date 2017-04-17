@@ -9,20 +9,20 @@ import (
 )
 
 var _ = Describe("Solr Client", func() {
-	var solrClient solr.Solr
-
+	var solrClient solr.SolrZK
+	var solrHttp solr.SolrHTTP
 	BeforeEach(func() {
 		var err error
-		solrClient, err = solr.NewSolr("zk:2181", "solr", "solrtest", solr.User("solr"), solr.Password("admin"))
+		solrClient = solr.NewSolrZK("zk:2181", "solr", "solrtest")
+		solrHttp, err = solr.NewSolrHTTP(solrClient, "solrtest", solr.User("solr"), solr.Password("admin"))
 		Expect(err).To(BeNil())
 		err = solrClient.Listen()
 		Expect(err).To(BeNil())
 	})
 	It("construct", func() {
-		solrClient, err := solr.NewSolr("test", "solr", "solrtest")
-		Expect(err).To(BeNil())
+		solrClient := solr.NewSolrZK("test", "solr", "solrtest")
 		Expect(solrClient).To(Not(BeNil()))
-		err = solrClient.Listen()
+		err := solrClient.Listen()
 		Expect(err).To(Not(BeNil()))
 
 	})
@@ -85,7 +85,7 @@ var _ = Describe("Solr Client", func() {
 
 		Describe("Test Requests", func() {
 			It("can get requests", func() {
-				r, err := solrClient.SolrHttp().Read(solr.FilterQuery("*:*"), solr.Rows(10))
+				r, err := solrHttp.Read(solr.FilterQuery("*:*"), solr.Rows(10))
 				Expect(err).To(BeNil())
 				Expect(r).To(Not(BeNil()))
 			})
@@ -98,9 +98,9 @@ var _ = Describe("Solr Client", func() {
 					"first_name": "shawn1" + uuid,
 					"last_name":  uuid + "feldman1",
 				}
-				err := solrClient.SolrHttp().Update(doc["id"].(string), true, doc, solr.Commit(true))
+				err := solrHttp.Update(doc["id"].(string), true, doc, solr.Commit(true))
 				Expect(err).To(BeNil())
-				r, err := solrClient.SolrHttp().Read(solr.Query("*:*"), solr.FilterQuery("first_name:shawn1"+uuid), solr.Rows(10))
+				r, err := solrHttp.Read(solr.Query("*:*"), solr.FilterQuery("first_name:shawn1"+uuid), solr.Rows(10))
 				Expect(err).To(BeNil())
 				Expect(r).To(Not(BeNil()))
 				fmt.Println(r.Response.Docs)
@@ -115,9 +115,9 @@ var _ = Describe("Solr Client", func() {
 					"first_name": "shawn3" + uuid,
 					"last_name":  uuid,
 				}
-				err := solrClient.SolrHttp().Update(doc["id"].(string), true, doc, solr.Commit(true))
+				err := solrHttp.Update(doc["id"].(string), true, doc, solr.Commit(true))
 				Expect(err).To(BeNil())
-				r, err := solrClient.SolrHttp().Read(solr.Route("mycrazyshardkey2!"), solr.Query("*:*"), solr.FilterQuery("last_name:"+uuid), solr.Rows(10))
+				r, err := solrHttp.Read(solr.Route("mycrazyshardkey2!"), solr.Query("*:*"), solr.FilterQuery("last_name:"+uuid), solr.Rows(10))
 				Expect(err).To(BeNil())
 				Expect(r).To(Not(BeNil()))
 				Expect(r.Response.NumFound).To(BeEquivalentTo(1))
@@ -135,15 +135,15 @@ var _ = Describe("Solr Client", func() {
 						"last_name":  uuid,
 					}
 					if i < limit-1 {
-						err := solrClient.SolrHttp().Update(doc["id"].(string), true, doc, solr.Commit(false))
+						err := solrHttp.Update(doc["id"].(string), true, doc, solr.Commit(false))
 						Expect(err).To(BeNil())
 					} else {
-						err := solrClient.SolrHttp().Update(doc["id"].(string), true, doc, solr.Commit(true))
+						err := solrHttp.Update(doc["id"].(string), true, doc, solr.Commit(true))
 						Expect(err).To(BeNil())
 					}
 
 				}
-				r, err := solrClient.SolrHttp().Read(solr.Route("mycrazyshardkey4!"), solr.Query("*:*"), solr.FilterQuery("last_name:"+uuid), solr.Rows(1000))
+				r, err := solrHttp.Read(solr.Route("mycrazyshardkey4!"), solr.Query("*:*"), solr.FilterQuery("last_name:"+uuid), solr.Rows(1000))
 				Expect(err).To(BeNil())
 				Expect(r).To(Not(BeNil()))
 				Expect(r.Response.NumFound).To(BeEquivalentTo(limit))
@@ -152,11 +152,12 @@ var _ = Describe("Solr Client", func() {
 		Describe("Basic Auth Fails", func() {
 
 			It("can get requests", func() {
-				solrNoAuthClient, err := solr.NewSolr("zk:2181", "solr", "solrtest")
+				solrNoAuthClient := solr.NewSolrZK("zk:2181", "solr", "solrtest")
+				solrNoAuthHttp, err := solr.NewSolrHTTP(solrNoAuthClient, "solrtest")
 				Expect(err).To(BeNil())
 				err = solrNoAuthClient.Listen()
 				Expect(err).To(BeNil())
-				r, err := solrNoAuthClient.SolrHttp().Read(solr.FilterQuery("*:*"), solr.Rows(10))
+				r, err := solrNoAuthHttp.Read(solr.FilterQuery("*:*"), solr.Rows(10))
 				Expect(strings.Contains(err.Error(), "401")).To(BeTrue())
 				Expect(r.Status).To(BeEquivalentTo(401))
 			})

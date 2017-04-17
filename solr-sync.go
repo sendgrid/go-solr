@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-func (s *solrInstance) Listen() error {
+func (s *solrZkInstance) Listen() error {
 	err := s.zookeeper.Connect()
 	s.currentNode = 0
 	if err != nil {
@@ -55,7 +55,7 @@ func (s *solrInstance) Listen() error {
 	return nil
 }
 
-func (s *solrInstance) initCollectionsListener() (<-chan zk.Event, error) {
+func (s *solrZkInstance) initCollectionsListener() (<-chan zk.Event, error) {
 	s.clusterState = ClusterState{}
 	collections, collectionsEvents, err := s.zookeeper.GetClusterStateW()
 	if err != nil {
@@ -65,7 +65,7 @@ func (s *solrInstance) initCollectionsListener() (<-chan zk.Event, error) {
 	return collectionsEvents, nil
 }
 
-func (s *solrInstance) initLiveNodesListener() (<-chan zk.Event, error) {
+func (s *solrZkInstance) initLiveNodesListener() (<-chan zk.Event, error) {
 	liveNodes, liveNodeEvents, err := s.zookeeper.GetLiveNodesW()
 	if err != nil {
 		return nil, err
@@ -75,25 +75,25 @@ func (s *solrInstance) initLiveNodesListener() (<-chan zk.Event, error) {
 }
 
 // GetClusterState Intentionally return a copy vs a pointer want to be thread safe
-func (s *solrInstance) GetClusterState() (ClusterState, error) {
+func (s *solrZkInstance) GetClusterState() (ClusterState, error) {
 	s.clusterStateMutex.Lock()
 	defer s.clusterStateMutex.Unlock()
 	return s.clusterState, nil
 }
 
-func (s *solrInstance) setLiveNodes(nodes []string) {
+func (s *solrZkInstance) setLiveNodes(nodes []string) {
 	s.clusterStateMutex.Lock()
 	defer s.clusterStateMutex.Unlock()
 	s.clusterState.LiveNodes = nodes
 }
 
-func (s *solrInstance) setCollections(collections map[string]Collection) {
+func (s *solrZkInstance) setCollections(collections map[string]Collection) {
 	s.clusterStateMutex.Lock()
 	defer s.clusterStateMutex.Unlock()
 	s.clusterState.Collections = collections
 }
 
-func (s *solrInstance) GetNextReadHost() string {
+func (s *solrZkInstance) GetNextReadHost() string {
 	s.currentNodeMutex.Lock()
 	defer s.currentNodeMutex.Unlock()
 	node := s.clusterState.LiveNodes[s.currentNode]

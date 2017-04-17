@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-type SolrHttp interface {
+type SolrHTTP interface {
 	Read(opts ...func(url.Values)) (SolrResponse, error)
 	Update(docID string, updateOnly bool, doc interface{}, opts ...func(url.Values)) error
 }
@@ -26,7 +26,7 @@ type solrHttp struct {
 	baseUrl     string
 	queryClient HTTPer
 	writeClient HTTPer
-	solrZk      Solr
+	solrZk      SolrZK
 	useHttps    bool
 	collection  string
 	cert        string
@@ -35,7 +35,7 @@ type solrHttp struct {
 	minRf       int
 }
 
-func NewSolrHttp(solrZk Solr, collection string, options ...func(*solrHttp)) (SolrHttp, error) {
+func NewSolrHTTP(solrZk SolrZK, collection string, options ...func(*solrHttp)) (SolrHTTP, error) {
 	solrCli := solrHttp{solrZk: solrZk, collection: collection, minRF: 1, baseUrl: "solr", useHttps: false}
 	for _, opt := range options {
 		opt(&solrCli)
