@@ -36,7 +36,7 @@ func GetVersionFromDoc(m map[string]interface{}) int {
 
 type Adds map[string]int
 
-type updateResponse struct {
+type UpdateResponse struct {
 	Response struct {
 		Status int `json:"status"`
 		QTime  int `json:"QTime"`
@@ -50,6 +50,6 @@ type updateResponse struct {
 	}
 }
 
-type deleteRequest struct {
+type DeleteRequest struct {
 	Delete []string `json:"delete"`
 }

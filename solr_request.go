@@ -111,7 +111,7 @@ func (s *solrHttp) Update(docID string, updateOnly bool, doc interface{}, opts .
 			return NewSolrInternalError(resp.StatusCode, string(htmlData))
 		}
 	}
-	var r updateResponse
+	var r UpdateResponse
 	dec := json.NewDecoder(resp.Body)
 	if err := dec.Decode(&r); err != nil {
 		return NewSolrParseError(resp.StatusCode, err.Error())
@@ -233,7 +233,9 @@ func Rows(rows uint32) func(url.Values) {
 
 func Route(r string) func(url.Values) {
 	return func(p url.Values) {
-		p["_route_"] = []string{r}
+		if r != "" {
+			p["_route_"] = []string{r}
+		}
 	}
 }
 
