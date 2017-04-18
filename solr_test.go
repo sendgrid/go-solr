@@ -14,7 +14,7 @@ var _ = Describe("Solr Client", func() {
 	BeforeEach(func() {
 		var err error
 		solrClient = solr.NewSolrZK("zk:2181", "solr", "solrtest")
-		solrHttp, err = solr.NewSolrHTTP(solrClient, "solrtest", solr.User("solr"), solr.Password("admin"))
+		solrHttp, err = solr.NewSolrHTTP(solrClient, "solrtest", solr.User("solr"), solr.Password("admin"), solr.MinRF(2))
 		Expect(err).To(BeNil())
 		err = solrClient.Listen()
 		Expect(err).To(BeNil())
@@ -50,7 +50,6 @@ var _ = Describe("Solr Client", func() {
 
 		It("can find a replica", func() {
 			state, err := solrClient.GetClusterState()
-			fmt.Println(state)
 			Expect(err).To(BeNil())
 			Expect(state).To(Not(BeNil()))
 			Expect(len(state.Collections)).To(Equal(1))
@@ -103,7 +102,6 @@ var _ = Describe("Solr Client", func() {
 				r, err := solrHttp.Read(solr.Query("*:*"), solr.FilterQuery("first_name:shawn1"+uuid), solr.Rows(10))
 				Expect(err).To(BeNil())
 				Expect(r).To(Not(BeNil()))
-				fmt.Println(r.Response.Docs)
 				Expect(r.Response.NumFound).To(BeEquivalentTo(1))
 			})
 			It("can update requests and read with route", func() {
