@@ -20,11 +20,18 @@ type Response struct {
 }
 
 func GetDocIdFromDoc(m map[string]interface{}) string {
-	return m["id"].(string)
+	if v, ok := m["id"]; ok {
+		return v.(string)
+	}
+	return ""
 }
 
 func GetVersionFromDoc(m map[string]interface{}) int {
-	return m["_version_"].(int)
+	if v, ok := m["_version_"]; ok {
+		return v.(int)
+	}
+	return 0
+
 }
 
 type Adds map[string]int
