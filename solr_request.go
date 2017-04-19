@@ -370,13 +370,13 @@ func BatchSize(size int) func(*solrHttp) {
 	}
 }
 
-func useHTTPS(useHTTPS bool) func(*solrHttp) {
+func UseHTTPS(useHTTPS bool) func(*solrHttp) {
 	return func(c *solrHttp) {
 		c.useHTTPS = useHTTPS
 	}
 }
 
-func baseURL(baseURL string) func(*solrHttp) {
+func BaseURL(baseURL string) func(*solrHttp) {
 	return func(c *solrHttp) {
 		c.baseURL = baseURL
 	}
