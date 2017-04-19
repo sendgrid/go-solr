@@ -37,10 +37,21 @@ type solrHttp struct {
 
 func NewSolrHTTP(solrZk SolrZK, collection string, options ...func(*solrHttp)) (SolrHTTP, error) {
 	solrCli := solrHttp{solrZk: solrZk, collection: collection, minRF: 1, baseURL: "solr", useHTTPS: false}
+	if !solrZk.Listening() {
+		return nil, fmt.Errorf("must call solr.Listen")
+	}
 	for _, opt := range options {
 		opt(&solrCli)
 	}
 	var err error
+	var props ClusterProps
+	props, err = solrZk.GetClusterProps()
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("Fetched cluster props %v", props)
+	solrCli.useHTTPS = props.UrlScheme == "https"
+
 	if solrCli.writeClient == nil {
 		solrCli.writeClient, err = defaultWriteClient(solrCli.cert)
 		if err != nil {

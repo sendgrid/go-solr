@@ -41,3 +41,7 @@ func NewCompositeKey(id string) (CompositeKey, error) {
 
 	panic("failed all cases")
 }
+
+type ClusterProps struct {
+	UrlScheme string `json:"urlScheme"`
+}

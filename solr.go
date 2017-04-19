@@ -14,8 +14,10 @@ type SolrZK interface {
 	GetZookeepers() string
 	GetNextReadHost() string
 	GetClusterState() (ClusterState, error)
+	GetClusterProps() (ClusterProps, error)
 	GetLeader(id string) (string, error)
 	Listen() error
+	Listening() bool
 	FindLiveReplicaUrls(key string) ([]string, error)
 	FindReplicaForRoute(key string) (string, error)
 }
@@ -29,6 +31,7 @@ type solrZkInstance struct {
 	clusterState      ClusterState
 	clusterStateMutex *sync.Mutex
 	currentNodeMutex  *sync.Mutex
+	listening         bool
 }
 
 func NewSolrZK(zookeepers string, zkRoot string, collectionName string) SolrZK {
@@ -36,6 +39,7 @@ func NewSolrZK(zookeepers string, zkRoot string, collectionName string) SolrZK {
 
 	instance.clusterStateMutex = &sync.Mutex{}
 	instance.currentNodeMutex = &sync.Mutex{}
+	instance.listening = false
 	return &instance
 }
 
@@ -69,4 +73,13 @@ func (s *solrZkInstance) GetLeader(id string) (string, error) {
 	collectionMap := cs.Collections[s.collection]
 	leader, err := findLeader(id, &collectionMap)
 	return leader, err
+}
+
+// GetClusterProps Intentionally return a copy vs a pointer want to be thread safe
+func (s *solrZkInstance) GetClusterProps() (ClusterProps, error) {
+	return s.zookeeper.GetClusterProps()
+}
+
+func (s *solrZkInstance) Listening() bool {
+	return s.listening
 }

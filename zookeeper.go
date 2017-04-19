@@ -28,6 +28,7 @@ type Zookeeper interface {
 	GetClusterStateW() (map[string]Collection, <-chan zk.Event, error)
 	GetLiveNodes() ([]string, error)
 	GetLiveNodesW() ([]string, <-chan zk.Event, error)
+	GetClusterProps() (ClusterProps, error)
 }
 
 func NewZookeeper(connectionString string, zkRoot string, collection string) Zookeeper {
@@ -89,6 +90,22 @@ func (z *zookeeper) GetClusterState() (map[string]Collection, error) {
 	return cs, nil
 }
 
+func (z *zookeeper) GetClusterProps() (ClusterProps, error) {
+
+	node, _, err := z.zkConnection.Get("/clusterprops.json")
+	if err != nil {
+		if strings.Contains(err.Error(), "zk: node does not exist") {
+			return ClusterProps{UrlScheme: "http"}, nil
+		}
+		return ClusterProps{}, err
+	}
+	cp, err := deserializeClusterProps(node)
+	if err != nil {
+		return cp, err
+	}
+	return cp, nil
+}
+
 func (z *zookeeper) GetLiveNodesW() ([]string, <-chan zk.Event, error) {
 	children, _, events, err := z.zkConnection.ChildrenW(z.getLiveNodesPath(z.zkRoot))
 	if err != nil {
@@ -114,6 +131,7 @@ func (z *zookeeper) GetLiveNodes() ([]string, error) {
 func (z *zookeeper) getLiveNodesPath(root string) string {
 	return fmt.Sprintf("/%s/live_nodes", root)
 }
+
 func deserializeClusterState(node []byte) (map[string]Collection, error) {
 	var collections map[string]Collection
 	decoder := json.NewDecoder(bytes.NewBuffer(node))
@@ -121,6 +139,15 @@ func deserializeClusterState(node []byte) (map[string]Collection, error) {
 		return nil, err
 	}
 	return collections, nil
+}
+
+func deserializeClusterProps(node []byte) (ClusterProps, error) {
+	var clusterProps ClusterProps
+	decoder := json.NewDecoder(bytes.NewBuffer(node))
+	if err := decoder.Decode(&clusterProps); err != nil {
+		return ClusterProps{}, err
+	}
+	return clusterProps, nil
 }
 
 func (z *zookeeper) getClusterStatePath(root string, collection string) string {

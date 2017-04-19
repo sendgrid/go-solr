@@ -14,10 +14,11 @@ var _ = Describe("Solr Client", func() {
 	BeforeEach(func() {
 		var err error
 		solrClient = solr.NewSolrZK("zk:2181", "solr", "solrtest")
-		solrHttp, err = solr.NewSolrHTTP(solrClient, "solrtest", solr.User("solr"), solr.Password("admin"), solr.MinRF(2))
-		Expect(err).To(BeNil())
 		err = solrClient.Listen()
 		Expect(err).To(BeNil())
+		solrHttp, err = solr.NewSolrHTTP(solrClient, "solrtest", solr.User("solr"), solr.Password("admin"), solr.MinRF(2))
+		Expect(err).To(BeNil())
+
 	})
 	It("construct", func() {
 		solrClient := solr.NewSolrZK("test", "solr", "solrtest")
@@ -151,6 +152,8 @@ var _ = Describe("Solr Client", func() {
 
 			It("can get requests", func() {
 				solrNoAuthClient := solr.NewSolrZK("zk:2181", "solr", "solrtest")
+				err := solrNoAuthClient.Listen()
+				Expect(err).To(BeNil())
 				solrNoAuthHttp, err := solr.NewSolrHTTP(solrNoAuthClient, "solrtest")
 				Expect(err).To(BeNil())
 				err = solrNoAuthClient.Listen()

@@ -52,6 +52,7 @@ func (s *solrZkInstance) Listen() error {
 			}
 		}
 	}()
+	s.listening = true
 	return nil
 }
 
