@@ -23,11 +23,11 @@ type solrHttp struct {
 	minRF       int
 	user        string
 	password    string
-	baseUrl     string
+	baseURL     string
 	queryClient HTTPer
 	writeClient HTTPer
 	solrZk      SolrZK
-	useHttps    bool
+	useHTTPS    bool
 	collection  string
 	cert        string
 	defaultRows uint32
@@ -36,7 +36,7 @@ type solrHttp struct {
 }
 
 func NewSolrHTTP(solrZk SolrZK, collection string, options ...func(*solrHttp)) (SolrHTTP, error) {
-	solrCli := solrHttp{solrZk: solrZk, collection: collection, minRF: 1, baseUrl: "solr", useHttps: false}
+	solrCli := solrHttp{solrZk: solrZk, collection: collection, minRF: 1, baseURL: "solr", useHTTPS: false}
 	for _, opt := range options {
 		opt(&solrCli)
 	}
@@ -146,10 +146,10 @@ func (s *solrHttp) Read(opts ...func(url.Values)) (SolrResponse, error) {
 
 	} else {
 		protocol := "http"
-		if s.useHttps {
+		if s.useHTTPS {
 			protocol = "https"
 		}
-		host = fmt.Sprintf("%s://%s/%s", protocol, s.solrZk.GetNextReadHost(), s.baseUrl)
+		host = fmt.Sprintf("%s://%s/%s", protocol, s.solrZk.GetNextReadHost(), s.baseURL)
 	}
 
 	var sr SolrResponse
@@ -370,15 +370,15 @@ func BatchSize(size int) func(*solrHttp) {
 	}
 }
 
-func UseHttps(useHttps bool) func(*solrHttp) {
+func useHTTPS(useHTTPS bool) func(*solrHttp) {
 	return func(c *solrHttp) {
-		c.useHttps = useHttps
+		c.useHTTPS = useHTTPS
 	}
 }
 
-func BaseUrl(baseUrl string) func(*solrHttp) {
+func baseURL(baseURL string) func(*solrHttp) {
 	return func(c *solrHttp) {
-		c.baseUrl = baseUrl
+		c.baseURL = baseURL
 	}
 }
 

@@ -1,11 +1,11 @@
 package solr_test
 
 import (
-	"fmt"
+	"strings"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/sendgrid/solr-go"
-	"strings"
 )
 
 var _ = Describe("Solr Client", func() {
