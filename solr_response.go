@@ -28,8 +28,16 @@ func GetDocIdFromDoc(m map[string]interface{}) string {
 
 func GetVersionFromDoc(m map[string]interface{}) int {
 	if v, ok := m["_version_"]; ok {
-		return int(v.(float64))
+		switch v := v.(type) {
+		default:
+			return 0
+		case float64:
+			return int(float64(v))
+		case int:
+			return int(v)
+		}
 	}
+
 	return 0
 }
 
