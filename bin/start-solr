@@ -22,4 +22,6 @@ solr create_collection -c solrtest -n solrtest -shards 4 -replicationFactor 2
 
 /opt/solr/server/scripts/cloud-scripts/zkcli.sh -zkhost zk:2181/solr -cmd put /security.json '{"authentication": {"class": "solr.BasicAuthPlugin","blockUnknown": true,"credentials": {"solr": "J0IbXqNMOsK6fvu3EseKuMiBiXAeRo51a6OoJBEbPEU= yLhT0cqEvO7CCkBUEZSDBQgTT/50CbfW0WjjC2YZchc="}},"authorization": {"class": "solr.RuleBasedAuthorizationPlugin","permissions": [{"name": "security-edit","role": "admin"}],"user-role": {"solr": "admin"}}}'
 
+/opt/solr/server/scripts/cloud-scripts/zkcli.sh -zkhost zk:2181/solr -cmd clusterprop -name urlScheme -val "http"
+
 tail -f /opt/solr/solrtest/solr.log
