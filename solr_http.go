@@ -381,12 +381,6 @@ func BatchSize(size int) func(*solrHttp) {
 	}
 }
 
-func UseHTTPS(useHTTPS bool) func(*solrHttp) {
-	return func(c *solrHttp) {
-		log.Println("solrcli UseHTTPS is deprecated")
-	}
-}
-
 func BaseURL(baseURL string) func(*solrHttp) {
 	return func(c *solrHttp) {
 		c.baseURL = baseURL
