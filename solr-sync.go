@@ -2,7 +2,6 @@ package solr
 
 import (
 	"github.com/samuel/go-zookeeper/zk"
-	"log"
 )
 
 func (s *solrZkInstance) Listen() error {
@@ -35,7 +34,9 @@ func (s *solrZkInstance) Listen() error {
 					s.setCollections(collections)
 				}
 				if cEvent.State < zk.StateConnected {
-					log.Printf("disconnected zkState: %d", cEvent.State)
+					s.logger.Fatalf("Solr-go: solr cluster zk disconnected  %v", cEvent)
+				} else {
+					s.logger.Printf("Solr-go: solr cluster zk state changed zkType: %d zkState: %d", cEvent.Type, cEvent.State)
 				}
 			case nEvent := <-liveNodeEvents:
 				// do something if its not a session or disconnect
@@ -47,7 +48,9 @@ func (s *solrZkInstance) Listen() error {
 					s.setLiveNodes(liveNodes)
 				}
 				if nEvent.State < zk.StateConnected {
-					log.Printf("disconnected zkState: %d", nEvent.State)
+					s.logger.Fatalf("Solr-go: solr cluster zk live nodes disconnected zkType: %v ", nEvent)
+				} else {
+					s.logger.Printf("Solr-go: solr cluster zk live nodes state changed zkType: %d zkState: %d", nEvent.Type, nEvent.State)
 				}
 			}
 		}
@@ -86,12 +89,14 @@ func (s *solrZkInstance) setLiveNodes(nodes []string) {
 	s.clusterStateMutex.Lock()
 	defer s.clusterStateMutex.Unlock()
 	s.clusterState.LiveNodes = nodes
+	s.logger.Printf("Solr-go: zk livenodes updated %v ", s.clusterState.LiveNodes)
 }
 
 func (s *solrZkInstance) setCollections(collections map[string]Collection) {
 	s.clusterStateMutex.Lock()
 	defer s.clusterStateMutex.Unlock()
 	s.clusterState.Collections = collections
+	s.logger.Printf("Solr-go: zk collections updated %v ", s.clusterState.Collections)
 }
 
 func (s *solrZkInstance) GetNextReadHost() string {
