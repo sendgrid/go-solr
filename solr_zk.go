@@ -2,6 +2,8 @@ package solr
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
 	"math/rand"
 	"sync"
 )
@@ -32,14 +34,21 @@ type solrZkInstance struct {
 	clusterStateMutex *sync.Mutex
 	currentNodeMutex  *sync.Mutex
 	listening         bool
+	logger            Logger
 }
 
-func NewSolrZK(zookeepers string, zkRoot string, collectionName string) SolrZK {
+func NewSolrZK(zookeepers string, zkRoot string, collectionName string, opts ...func(*solrZkInstance)) SolrZK {
 	instance := solrZkInstance{zookeeper: NewZookeeper(zookeepers, zkRoot, collectionName), collection: collectionName}
 
 	instance.clusterStateMutex = &sync.Mutex{}
 	instance.currentNodeMutex = &sync.Mutex{}
 	instance.listening = false
+	instance.logger = log.New(ioutil.Discard, "[SolrClient] ", log.LstdFlags)
+
+	for _, opt := range opts {
+		opt(&instance)
+	}
+
 	return &instance
 }
 
@@ -82,4 +91,10 @@ func (s *solrZkInstance) GetClusterProps() (ClusterProps, error) {
 
 func (s *solrZkInstance) Listening() bool {
 	return s.listening
+}
+
+func (s *solrZkInstance) Logger(logger Logger) func(s *solrZkInstance) {
+	return func(solrZk *solrZkInstance) {
+		s.logger = logger
+	}
 }

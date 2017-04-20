@@ -6,6 +6,16 @@ import (
 	"strings"
 )
 
+type Logger interface {
+	Print(v ...interface{})
+	Printf(format string, v ...interface{})
+	Println(v ...interface{})
+	Fatal(v ...interface{})
+	Fatalf(format string, v ...interface{})
+	Panic(v ...interface{})
+	Panicf(format string, v ...interface{})
+}
+
 type HTTPer interface {
 	Do(*http.Request) (*http.Response, error)
 }

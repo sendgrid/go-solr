@@ -33,23 +33,26 @@ type solrHttp struct {
 	defaultRows uint32
 	batchSize   int
 	minRf       int
+	logger      Logger
 }
 
 func NewSolrHTTP(solrZk SolrZK, collection string, options ...func(*solrHttp)) (SolrHTTP, error) {
 	solrCli := solrHttp{solrZk: solrZk, collection: collection, minRF: 1, baseURL: "solr", useHTTPS: false}
+	solrCli.logger = log.New(ioutil.Discard, "[SolrClient] ", log.LstdFlags)
+
 	if !solrZk.Listening() {
 		return nil, fmt.Errorf("must call solr.Listen")
 	}
 	for _, opt := range options {
 		opt(&solrCli)
 	}
+
 	var err error
 	var props ClusterProps
 	props, err = solrZk.GetClusterProps()
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("Fetched cluster props %v", props)
 	solrCli.useHTTPS = props.UrlScheme == "https"
 
 	if solrCli.writeClient == nil {
@@ -167,7 +170,6 @@ func (s *solrHttp) Read(opts ...func(url.Values)) (SolrResponse, error) {
 	u := fmt.Sprintf("%s/%s/select", host, s.collection)
 	body := bytes.NewBufferString(urlValues.Encode())
 	req, err := http.NewRequest("POST", u, body)
-	log.Printf("Reading from %s %v", u, body)
 	if err != nil {
 		return sr, err
 	}
@@ -390,5 +392,11 @@ func BaseURL(baseURL string) func(*solrHttp) {
 func MinRF(minRf int) func(*solrHttp) {
 	return func(c *solrHttp) {
 		c.minRf = minRf
+	}
+}
+
+func HttpLogger(logger Logger) func(*solrHttp) {
+	return func(c *solrHttp) {
+		c.logger = logger
 	}
 }

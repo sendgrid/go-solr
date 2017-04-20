@@ -147,23 +147,50 @@ var _ = Describe("Solr Client", func() {
 				Expect(r).To(Not(BeNil()))
 				Expect(r.Response.NumFound).To(BeEquivalentTo(limit))
 			})
-		})
-		Describe("Basic Auth Fails", func() {
 
-			It("can get requests", func() {
-				solrNoAuthClient := solr.NewSolrZK("zk:2181", "solr", "solrtest")
-				err := solrNoAuthClient.Listen()
+			It("can update requests and read with route many times for many shards", func() {
+				const limit int = 100
+				uuid, _ := newUUID()
+				for i := 0; i < limit; i++ {
+					shardKey := "mycrazyshardkey" + string(i%10)
+					iterationId, _ := newUUID()
+					doc := map[string]interface{}{
+						"id":         shardKey + "!rando" + iterationId,
+						"email":      "rando" + iterationId + "@sendgrid.com",
+						"first_name": "tester" + iterationId,
+						"last_name":  uuid,
+					}
+					if i < limit-20 {
+						err := solrHttp.Update(doc["id"].(string), true, doc, solr.Commit(false))
+						Expect(err).To(BeNil())
+					} else {
+						err := solrHttp.Update(doc["id"].(string), true, doc, solr.Commit(true))
+						Expect(err).To(BeNil())
+					}
+
+				}
+				r, err := solrHttp.Read(solr.Query("*:*"), solr.FilterQuery("last_name:"+uuid), solr.Rows(1000))
 				Expect(err).To(BeNil())
-				solrNoAuthHttp, err := solr.NewSolrHTTP(solrNoAuthClient, "solrtest")
-				Expect(err).To(BeNil())
-				err = solrNoAuthClient.Listen()
-				Expect(err).To(BeNil())
-				r, err := solrNoAuthHttp.Read(solr.FilterQuery("*:*"), solr.Rows(10))
-				Expect(strings.Contains(err.Error(), "401")).To(BeTrue())
-				Expect(r.Status).To(BeEquivalentTo(401))
+				Expect(r).To(Not(BeNil()))
+				Expect(r.Response.NumFound).To(BeEquivalentTo(limit))
 			})
-
 		})
+	})
+	Describe("Basic Auth Fails", func() {
+
+		It("can get requests", func() {
+			solrNoAuthClient := solr.NewSolrZK("zk:2181", "solr", "solrtest")
+			err := solrNoAuthClient.Listen()
+			Expect(err).To(BeNil())
+			solrNoAuthHttp, err := solr.NewSolrHTTP(solrNoAuthClient, "solrtest")
+			Expect(err).To(BeNil())
+			err = solrNoAuthClient.Listen()
+			Expect(err).To(BeNil())
+			r, err := solrNoAuthHttp.Read(solr.FilterQuery("*:*"), solr.Rows(10))
+			Expect(strings.Contains(err.Error(), "401")).To(BeTrue())
+			Expect(r.Status).To(BeEquivalentTo(401))
+		})
+
 	})
 
 })
