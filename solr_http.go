@@ -15,10 +15,6 @@ import (
 	"time"
 )
 
-type SolrHTTP interface {
-	Read(opts ...func(url.Values)) (SolrResponse, error)
-	Update(docID string, updateOnly bool, doc interface{}, opts ...func(url.Values)) error
-}
 type solrHttp struct {
 	minRF       int
 	user        string

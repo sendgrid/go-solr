@@ -1,11 +1,10 @@
 package solr_test
 
 import (
-	"strings"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/sendgrid/solr-go"
+	"strings"
 )
 
 var _ = Describe("Solr Client", func() {
@@ -123,7 +122,7 @@ var _ = Describe("Solr Client", func() {
 			})
 
 			It("can update requests and read with route many times", func() {
-				const limit int = 100
+				const limit int = 10
 				uuid, _ := newUUID()
 				for i := 0; i < limit; i++ {
 					iterationId, _ := newUUID()
@@ -148,32 +147,6 @@ var _ = Describe("Solr Client", func() {
 				Expect(r.Response.NumFound).To(BeEquivalentTo(limit))
 			})
 
-			It("can update requests and read with route many times for many shards", func() {
-				const limit int = 100
-				uuid, _ := newUUID()
-				for i := 0; i < limit; i++ {
-					shardKey := "mycrazyshardkey" + string(i%10)
-					iterationId, _ := newUUID()
-					doc := map[string]interface{}{
-						"id":         shardKey + "!rando" + iterationId,
-						"email":      "rando" + iterationId + "@sendgrid.com",
-						"first_name": "tester" + iterationId,
-						"last_name":  uuid,
-					}
-					if i < limit-20 {
-						err := solrHttp.Update(doc["id"].(string), true, doc, solr.Commit(false))
-						Expect(err).To(BeNil())
-					} else {
-						err := solrHttp.Update(doc["id"].(string), true, doc, solr.Commit(true))
-						Expect(err).To(BeNil())
-					}
-
-				}
-				r, err := solrHttp.Read(solr.Query("*:*"), solr.FilterQuery("last_name:"+uuid), solr.Rows(1000))
-				Expect(err).To(BeNil())
-				Expect(r).To(Not(BeNil()))
-				Expect(r.Response.NumFound).To(BeEquivalentTo(limit))
-			})
 		})
 	})
 	Describe("Basic Auth Fails", func() {

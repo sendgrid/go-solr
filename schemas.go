@@ -3,8 +3,26 @@ package solr
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 )
+
+type SolrZK interface {
+	GetZookeepers() string
+	GetNextReadHost() string
+	GetClusterState() (ClusterState, error)
+	GetClusterProps() (ClusterProps, error)
+	GetLeader(id string) (string, error)
+	Listen() error
+	Listening() bool
+	FindLiveReplicaUrls(key string) ([]string, error)
+	FindReplicaForRoute(key string) (string, error)
+}
+
+type SolrHTTP interface {
+	Read(opts ...func(url.Values)) (SolrResponse, error)
+	Update(docID string, updateOnly bool, doc interface{}, opts ...func(url.Values)) error
+}
 
 type Logger interface {
 	Print(v ...interface{})

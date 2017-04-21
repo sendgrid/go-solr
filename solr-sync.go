@@ -34,7 +34,7 @@ func (s *solrZkInstance) Listen() error {
 					s.setCollections(collections)
 				}
 				if cEvent.State < zk.StateConnected {
-					s.logger.Fatalf("Solr-go: solr cluster zk disconnected  %v", cEvent)
+					s.logger.Printf("[Error] solr cluster zk disconnected  %v", cEvent)
 				} else {
 					s.logger.Printf("Solr-go: solr cluster zk state changed zkType: %d zkState: %d", cEvent.Type, cEvent.State)
 				}
@@ -48,7 +48,7 @@ func (s *solrZkInstance) Listen() error {
 					s.setLiveNodes(liveNodes)
 				}
 				if nEvent.State < zk.StateConnected {
-					s.logger.Fatalf("Solr-go: solr cluster zk live nodes disconnected zkType: %v ", nEvent)
+					s.logger.Printf("[Error] solr cluster zk live nodes disconnected zkType: %v ", nEvent)
 				} else {
 					s.logger.Printf("Solr-go: solr cluster zk live nodes state changed zkType: %d zkState: %d", nEvent.Type, nEvent.State)
 				}

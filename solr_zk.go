@@ -12,18 +12,6 @@ func init() {
 
 }
 
-type SolrZK interface {
-	GetZookeepers() string
-	GetNextReadHost() string
-	GetClusterState() (ClusterState, error)
-	GetClusterProps() (ClusterProps, error)
-	GetLeader(id string) (string, error)
-	Listen() error
-	Listening() bool
-	FindLiveReplicaUrls(key string) ([]string, error)
-	FindReplicaForRoute(key string) (string, error)
-}
-
 type solrZkInstance struct {
 	zookeeper         Zookeeper
 	collection        string
