@@ -27,7 +27,6 @@ type solrHttp struct {
 	collection  string
 	cert        string
 	defaultRows uint32
-	batchSize   int
 	minRf       int
 	logger      Logger
 }
@@ -370,12 +369,6 @@ func User(user string) func(*solrHttp) {
 func Password(password string) func(*solrHttp) {
 	return func(c *solrHttp) {
 		c.password = password
-	}
-}
-
-func BatchSize(size int) func(*solrHttp) {
-	return func(c *solrHttp) {
-		c.batchSize = size
 	}
 }
 
