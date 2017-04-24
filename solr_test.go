@@ -41,7 +41,7 @@ var _ = Describe("Solr Client", func() {
 			Expect(err).To(BeNil())
 			Expect(state).To(Not(BeNil()))
 			Expect(len(state.Collections)).To(Equal(1))
-			leader, err := solrClient.GetLeader("mycrazyshardkey1!saurabh.kakkar@pearson.com")
+			leader, err := solrClient.GetLeader("mycrazyshardkey1!test.1@test.com")
 			Expect(err).To(BeNil())
 			Expect(leader).To(Not(BeNil()))
 			Expect(leader).To(ContainSubstring(":8983/solr"))

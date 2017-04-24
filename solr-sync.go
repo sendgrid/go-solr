@@ -103,7 +103,7 @@ func (s *solrZkInstance) GetNextReadHost() string {
 	s.currentNodeMutex.Lock()
 	defer s.currentNodeMutex.Unlock()
 	node := s.clusterState.LiveNodes[s.currentNode]
-	if s.currentNode == len(s.clusterState.LiveNodes)-1 {
+	if s.currentNode >= len(s.clusterState.LiveNodes)-1 {
 		s.currentNode = 0
 	} else {
 		s.currentNode++
