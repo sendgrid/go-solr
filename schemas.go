@@ -22,6 +22,7 @@ type SolrZK interface {
 type SolrHTTP interface {
 	Read(opts ...func(url.Values)) (SolrResponse, error)
 	Update(docID string, updateOnly bool, doc interface{}, opts ...func(url.Values)) error
+	Logger() Logger
 }
 
 type Logger interface {

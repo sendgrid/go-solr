@@ -72,6 +72,10 @@ func (s *solrHttp) Update(docID string, updateOnly bool, doc interface{}, opts .
 	if err != nil {
 		return err
 	}
+	if leader == "" {
+		s.logger.Printf("Missed leader for docID %s", docID)
+		leader = s.solrZk.GetNextReadHost()
+	}
 
 	urlVals := url.Values{
 		"min_rf": {fmt.Sprintf("%d", s.minRF)},
@@ -208,6 +212,11 @@ func getMapChunks(in []map[string]interface{}, chunkSize int) [][]map[string]int
 	}
 	return out
 }
+
+func (s *solrHttp) Logger() Logger {
+	return s.logger
+}
+
 func getidChunks(in []string, chunkSize int) [][]string {
 	var out [][]string
 	for i := 0; i < len(in); i += chunkSize {

@@ -40,7 +40,7 @@ func findReplicas(key string, cs *Collection) (map[string]Replica, error) {
 		if err != nil {
 			return nil, err
 		}
-		if shardKeyHash > hashRange.Low && shardKeyHash < hashRange.High {
+		if shardKeyHash >= hashRange.Low && shardKeyHash <= hashRange.High {
 			replicas = shard.Replicas
 			break
 		}
