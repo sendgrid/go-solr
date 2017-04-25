@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"time"
 )
@@ -33,8 +34,7 @@ type solrHttp struct {
 
 func NewSolrHTTP(solrZk SolrZK, collection string, options ...func(*solrHttp)) (SolrHTTP, error) {
 	solrCli := solrHttp{solrZk: solrZk, collection: collection, minRF: 1, baseURL: "solr", useHTTPS: false}
-	solrCli.logger = log.New(ioutil.Discard, "[SolrClient] ", log.LstdFlags)
-
+	solrCli.logger = log.New(os.Stdout, "[SolrClient] ", log.LstdFlags)
 	if !solrZk.Listening() {
 		return nil, fmt.Errorf("must call solr.Listen")
 	}
@@ -74,7 +74,7 @@ func (s *solrHttp) Update(docID string, updateOnly bool, doc interface{}, opts .
 	}
 	if leader == "" {
 		s.logger.Printf("Missed leader for docID %s", docID)
-		leader = s.solrZk.GetNextReadHost()
+		return NewSolrLeaderError(docID)
 	}
 
 	urlVals := url.Values{

@@ -19,15 +19,15 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	solrHttp, err := NewSolrHTTP(solrZk, "solrtest", User("solr"), Password("admin"), MinRF(2))
+	solrHttp, err := NewSolrHTTP(solrZk, "solrtest", User("solr"), Password("admin"), MinRF(1))
 	if err != nil {
 		panic(err)
 	}
-	solrHttpRetrier = NewSolrHttpRetrier(solrHttp, 5, 500*time.Millisecond, 30*time.Second)
+	solrHttpRetrier = NewSolrHttpRetrier(solrHttp, 5, 100*time.Millisecond)
 
 }
 func main() {
-	const limit int = 1000 * 20
+	const limit int = 1000 * 10
 	numFound, err := run(limit)
 	if err != nil {
 		panic(err)

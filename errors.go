@@ -30,6 +30,14 @@ func NewSolrInternalError(status int, message string) error {
 	return SolrInternalError{SolrError{errorMessage: fmt.Sprintf("recieved error response from solr status: %d message: %s", status, message)}}
 }
 
+type SolrLeaderError struct {
+	SolrError
+}
+
+func NewSolrLeaderError(docID string) error {
+	return SolrLeaderError{SolrError{errorMessage: fmt.Sprintf("Cannot find leader for doc %s", docID)}}
+}
+
 type SolrBatchError struct {
 	error
 }
