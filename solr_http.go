@@ -17,7 +17,6 @@ import (
 )
 
 type solrHttp struct {
-	minRF       int
 	user        string
 	password    string
 	baseURL     string
@@ -33,7 +32,7 @@ type solrHttp struct {
 }
 
 func NewSolrHTTP(solrZk SolrZK, collection string, options ...func(*solrHttp)) (SolrHTTP, error) {
-	solrCli := solrHttp{solrZk: solrZk, collection: collection, minRF: 1, baseURL: "solr", useHTTPS: false}
+	solrCli := solrHttp{solrZk: solrZk, collection: collection, minRf: 1, baseURL: "solr", useHTTPS: false}
 	solrCli.logger = log.New(os.Stdout, "[SolrClient] ", log.LstdFlags)
 	if !solrZk.Listening() {
 		return nil, fmt.Errorf("must call solr.Listen")
@@ -78,8 +77,9 @@ func (s *solrHttp) Update(docID string, updateOnly bool, doc interface{}, opts .
 	}
 
 	urlVals := url.Values{
-		"min_rf": {fmt.Sprintf("%d", s.minRF)},
+		"min_rf": {fmt.Sprintf("%d", s.minRf)},
 	}
+
 	for _, opt := range opts {
 		opt(urlVals)
 	}

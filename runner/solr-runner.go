@@ -19,7 +19,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	solrHttp, err := NewSolrHTTP(solrZk, "solrtest", User("solr"), Password("admin"), MinRF(1))
+	solrHttp, err := NewSolrHTTP(solrZk, "solrtest", User("solr"), Password("admin"), MinRF(2))
 	if err != nil {
 		panic(err)
 	}
@@ -35,7 +35,7 @@ func main() {
 	if limit != int(numFound) {
 		panic(fmt.Sprintf("limit did not match what was found %d=%d", limit, numFound))
 	}
-	fmt.Printf("runner done %d", numFound)
+	fmt.Println(fmt.Sprintf("runner done %d", numFound))
 }
 
 func run(limit int) (uint32, error) {
