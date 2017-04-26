@@ -52,12 +52,12 @@ func run(limit int) (uint32, error) {
 		if i < limit-20 {
 			err := solrHttpRetrier.Update(doc["id"].(string), true, doc, Commit(false))
 			if err != nil {
-				fmt.Print(err)
+				panic(err)
 			}
 		} else {
 			err := solrHttpRetrier.Update(doc["id"].(string), true, doc, Commit(true))
 			if err != nil {
-				fmt.Print(err)
+				panic(err)
 			}
 		}
 
