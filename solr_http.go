@@ -113,7 +113,7 @@ func (s *solrHttp) Update(docID string, updateOnly bool, doc interface{}, opts .
 		return err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
+	if resp.StatusCode != 200 {
 		htmlData, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("error reading response body for StatusCode %d, err: %s", resp.StatusCode, err)

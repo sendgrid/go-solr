@@ -48,7 +48,7 @@ func (s *SolrHttpRetrier) Update(docID string, updateOnly bool, doc interface{},
 			s.backoff(now, attempt)
 			continue
 		}
-		if attempt > 0 {
+		if attempt > 0 && err == nil {
 			s.Logger().Printf("[Solr Http Retrier] Healed after attempt %d", attempt)
 		}
 		break
