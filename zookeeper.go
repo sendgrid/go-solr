@@ -91,7 +91,6 @@ func (z *zookeeper) GetClusterState() (map[string]Collection, error) {
 }
 
 func (z *zookeeper) GetClusterProps() (ClusterProps, error) {
-
 	node, _, err := z.zkConnection.Get(fmt.Sprintf("/%s/clusterprops.json", z.zkRoot))
 	if err != nil {
 		if strings.Contains(err.Error(), "zk: node does not exist") {
