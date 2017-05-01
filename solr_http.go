@@ -50,14 +50,14 @@ func NewSolrHTTP(solrZk SolrZK, collection string, options ...func(*solrHttp)) (
 	solrCli.useHTTPS = props.UrlScheme == "https"
 
 	if solrCli.writeClient == nil {
-		solrCli.writeClient, err = defaultWriteClient(solrCli.cert)
+		solrCli.writeClient, err = defaultWriteClient(solrCli.cert, solrCli.useHTTPS)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if solrCli.queryClient == nil {
-		solrCli.queryClient, err = defaultReadClient(solrCli.cert)
+		solrCli.queryClient, err = defaultReadClient(solrCli.cert, solrCli.useHTTPS)
 		if err != nil {
 			return nil, err
 		}
@@ -292,11 +292,11 @@ func UrlVals(urlVals url.Values) func(url.Values) {
 	}
 }
 
-func defaultWriteClient(cert string) (HTTPer, error) {
+func defaultWriteClient(cert string, https bool) (HTTPer, error) {
 	cli := &http.Client{
 		Timeout: time.Duration(30) * time.Second,
 	}
-	if cert != "" {
+	if https {
 		tlsConfig, err := getTLSConfig(cert)
 		if err != nil {
 			return nil, err
@@ -306,11 +306,11 @@ func defaultWriteClient(cert string) (HTTPer, error) {
 	return cli, nil
 }
 
-func defaultReadClient(cert string) (HTTPer, error) {
+func defaultReadClient(cert string, https bool) (HTTPer, error) {
 	cli := &http.Client{
 		Timeout: time.Duration(20) * time.Second,
 	}
-	if cert != "" {
+	if https {
 		tlsConfig, err := getTLSConfig(cert)
 		if err != nil {
 			return nil, err
