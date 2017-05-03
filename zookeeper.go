@@ -28,6 +28,7 @@ type Zookeeper interface {
 	GetClusterStateW() (map[string]Collection, <-chan zk.Event, error)
 	GetLiveNodes() ([]string, error)
 	GetLiveNodesW() ([]string, <-chan zk.Event, error)
+	GetLeaderElectW() (<-chan zk.Event, error)
 	GetClusterProps() (ClusterProps, error)
 }
 
@@ -88,6 +89,15 @@ func (z *zookeeper) GetClusterState() (map[string]Collection, error) {
 		return cs, err
 	}
 	return cs, nil
+}
+
+func (z *zookeeper) GetLeaderElectW() (<-chan zk.Event, error) {
+	_, _, events, err := z.zkConnection.GetW(fmt.Sprintf("/%s/collections/%s/leader_elect", z.zkRoot, z.collection))
+	if err != nil {
+		return events, err
+	}
+
+	return events, nil
 }
 
 func (z *zookeeper) GetClusterProps() (ClusterProps, error) {

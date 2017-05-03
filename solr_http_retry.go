@@ -25,6 +25,9 @@ func (s *SolrHttpRetrier) Read(opts ...func(url.Values)) (SolrResponse, error) {
 	var err error
 	for attempt := 0; attempt < s.retries; attempt++ {
 		resp, err = s.solrCli.Read(opts...)
+		if err == ErrNotFound {
+			return resp, err
+		}
 		if err != nil {
 			s.Logger().Printf("[Solr Http Retrier] Error Retrying %v ", err)
 			s.backoff(now, attempt)
@@ -38,11 +41,14 @@ func (s *SolrHttpRetrier) Read(opts ...func(url.Values)) (SolrResponse, error) {
 	return resp, err
 }
 
-func (s *SolrHttpRetrier) Update(docID string, updateOnly bool, doc interface{}, opts ...func(url.Values)) error {
+func (s *SolrHttpRetrier) Update(docID string, jsonDocs bool, doc interface{}, opts ...func(url.Values)) error {
 	now := time.Now()
 	var err error
 	for attempt := 0; attempt < s.retries; attempt++ {
-		err := s.solrCli.Update(docID, updateOnly, doc, opts...)
+		err := s.solrCli.Update(docID, jsonDocs, doc, opts...)
+		if err == ErrNotFound {
+			return err
+		}
 		if err != nil {
 			s.Logger().Printf("[Solr Http Retrier] Error Retrying %v ", err)
 			s.backoff(now, attempt)

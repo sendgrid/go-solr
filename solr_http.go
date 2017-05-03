@@ -66,7 +66,7 @@ func NewSolrHTTP(solrZk SolrZK, collection string, options ...func(*solrHttp)) (
 	return &solrCli, nil
 }
 
-func (s *solrHttp) Update(docID string, updateOnly bool, doc interface{}, opts ...func(url.Values)) error {
+func (s *solrHttp) Update(docID string, jsonDocs bool, doc interface{}, opts ...func(url.Values)) error {
 	leader, err := s.solrZk.GetLeader(docID)
 	if err != nil {
 		return err
@@ -85,21 +85,21 @@ func (s *solrHttp) Update(docID string, updateOnly bool, doc interface{}, opts .
 	}
 
 	uri := fmt.Sprintf("%s/%s/update", leader, s.collection)
-	if updateOnly {
+	if jsonDocs {
 		uri += "/json/docs"
 	}
-
 	var buf bytes.Buffer
-	enc := json.NewEncoder(&buf)
-	if err := enc.Encode(doc); err != nil {
-		return err
+	if doc != nil {
+		enc := json.NewEncoder(&buf)
+		if err := enc.Encode(doc); err != nil {
+			return err
+		}
 	}
-
 	req, err := http.NewRequest("POST", uri, &buf)
+
 	if err != nil {
 		return err
 	}
-
 	req.URL.RawQuery = urlVals.Encode()
 
 	req.Header.Add("Content-Type", "application/json")
@@ -227,6 +227,12 @@ func getidChunks(in []string, chunkSize int) [][]string {
 		out = append(out, in[i:end])
 	}
 	return out
+}
+
+func DeleteStreamBody(filter string) func(url.Values) {
+	return func(p url.Values) {
+		p["stream.body"] = []string{fmt.Sprintf("<delete><query>%s</query></delete>", filter)}
+	}
 }
 
 func Query(q string) func(url.Values) {

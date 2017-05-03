@@ -146,11 +146,40 @@ var _ = Describe("Solr Client", func() {
 				Expect(r).To(Not(BeNil()))
 				Expect(r.Response.NumFound).To(BeEquivalentTo(limit))
 			})
+			It("can delete all", func() {
+				lastId := ""
+				const limit int = 10
+				uuid, _ := newUUID()
+				shardKey := "mycrazysha" + uuid
+				for i := 0; i < limit; i++ {
+					iterationId, _ := newUUID()
+					lastId := shardKey + "!rando" + iterationId
+					doc := map[string]interface{}{
+						"id":         lastId,
+						"email":      "rando" + iterationId + "@sendgrid.com",
+						"first_name": "tester" + iterationId,
+						"last_name":  uuid,
+					}
+					if i < limit-1 {
+						err := solrHttp.Update(doc["id"].(string), true, doc, solr.Commit(false))
+						Expect(err).To(BeNil())
+					} else {
+						err := solrHttp.Update(doc["id"].(string), true, doc, solr.Commit(true))
+						Expect(err).To(BeNil())
+					}
+
+				}
+				err := solrHttp.Update(lastId, false, nil, solr.Commit(true), solr.DeleteStreamBody("last_name:*"))
+				Expect(err).To(BeNil())
+				r, err := solrHttp.Read(solr.Route(shardKey), solr.Query("*:*"), solr.FilterQuery("last_name:"+uuid), solr.Rows(1000))
+				Expect(err).To(BeNil())
+				Expect(r).To(Not(BeNil()))
+				Expect(r.Response.NumFound).To(BeEquivalentTo(0))
+			})
 
 		})
 	})
 	Describe("Basic Auth Fails", func() {
-
 		It("can get requests", func() {
 			solrNoAuthClient := solr.NewSolrZK("zk:2181", "solr", "solrtest")
 			err := solrNoAuthClient.Listen()
@@ -160,6 +189,7 @@ var _ = Describe("Solr Client", func() {
 			err = solrNoAuthClient.Listen()
 			Expect(err).To(BeNil())
 			r, err := solrNoAuthHttp.Read(solr.FilterQuery("*:*"), solr.Rows(10))
+			Expect(err).To(Not(BeNil()))
 			Expect(strings.Contains(err.Error(), "401")).To(BeTrue())
 			Expect(r.Status).To(BeEquivalentTo(401))
 		})
