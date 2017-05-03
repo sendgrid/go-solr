@@ -20,6 +20,10 @@ func (s *solrZkInstance) Listen() error {
 	if err != nil {
 		return err
 	}
+	leaderEvents, err := s.initLeaderElectListener()
+	if err != nil {
+		return err
+	}
 	//loop forever
 	go func() {
 		for {
@@ -37,6 +41,10 @@ func (s *solrZkInstance) Listen() error {
 					s.logger.Printf("[Error] solr cluster zk disconnected  %v", cEvent)
 				} else {
 					s.logger.Printf("Solr-go: solr cluster zk state changed zkType: %d zkState: %d", cEvent.Type, cEvent.State)
+				}
+			case lEvent := <-leaderEvents:
+				if lEvent.Type == zk.EventNodeChildrenChanged || lEvent.Type == zk.EventNodeDataChanged {
+					// s.Logger().Printf("Leader changed pausing")
 				}
 			case nEvent := <-liveNodeEvents:
 				// do something if its not a session or disconnect
@@ -76,6 +84,14 @@ func (s *solrZkInstance) initLiveNodesListener() (<-chan zk.Event, error) {
 	}
 	s.setLiveNodes(liveNodes)
 	return liveNodeEvents, nil
+}
+
+func (s *solrZkInstance) initLeaderElectListener() (<-chan zk.Event, error) {
+	leaderEvents, err := s.zookeeper.GetLeaderElectW()
+	if err != nil {
+		return nil, err
+	}
+	return leaderEvents, nil
 }
 
 // GetClusterState Intentionally return a copy vs a pointer want to be thread safe

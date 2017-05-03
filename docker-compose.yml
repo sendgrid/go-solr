@@ -33,11 +33,23 @@ solr4:
   image: solr:6.4.2
   command: "/opt/solr/solrtest/start-solr"
   ports:
-    - "8983:8983"
+    - "7983:8983"
   links:
     - zk
   volumes:
     - "./bin:/opt/solr/solrtest:rw"
+
+java:
+  image: docker.sendgrid.net/sendgrid/solr
+  command:  /bin/bash
+  links:
+    - zk
+    - solr4
+    - solr3
+    - solr2
+    - solr1
+  volumes:
+    - "./runner:/opt/solr/test:rw"
 
 solrtests:
   build: .
