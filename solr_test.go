@@ -104,6 +104,40 @@ var _ = Describe("Solr Client", func() {
 				Expect(r).To(Not(BeNil()))
 				Expect(r.Response.NumFound).To(BeEquivalentTo(1))
 			})
+
+			It("can update requests with no doc id", func() {
+				uuid, _ := newUUID()
+
+				doc := map[string]interface{}{
+					"id":         "mycrazyshardkey1!" + uuid,
+					"email":      uuid + "feldman1@sendgrid.com",
+					"first_name": "shawn1" + uuid,
+					"last_name":  uuid + "feldman1",
+				}
+				err := solrHttp.Update("", true, doc, solr.Commit(true))
+				Expect(err).To(BeNil())
+				r, err := solrHttp.Read(solr.Query("*:*"), solr.FilterQuery("first_name:shawn1"+uuid), solr.Rows(10))
+				Expect(err).To(BeNil())
+				Expect(r).To(Not(BeNil()))
+				Expect(r.Response.NumFound).To(BeEquivalentTo(1))
+			})
+
+			It("can update requests with route", func() {
+				uuid, _ := newUUID()
+
+				doc := map[string]interface{}{
+					"id":         "mycrazyshardkey1!" + uuid,
+					"email":      uuid + "feldman1@sendgrid.com",
+					"first_name": "shawn1" + uuid,
+					"last_name":  uuid + "feldman1",
+				}
+				err := solrHttp.Update("", true, doc, solr.Commit(true), solr.Route("mycrazyshardkey1!"))
+				Expect(err).To(BeNil())
+				r, err := solrHttp.Read(solr.Query("*:*"), solr.FilterQuery("first_name:shawn1"+uuid), solr.Rows(10))
+				Expect(err).To(BeNil())
+				Expect(r).To(Not(BeNil()))
+				Expect(r.Response.NumFound).To(BeEquivalentTo(1))
+			})
 			It("can update requests and read with route", func() {
 				uuid, _ := newUUID()
 
