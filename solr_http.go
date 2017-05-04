@@ -67,15 +67,6 @@ func NewSolrHTTP(solrZk SolrZK, collection string, options ...func(*solrHttp)) (
 }
 
 func (s *solrHttp) Update(docID string, jsonDocs bool, doc interface{}, opts ...func(url.Values)) error {
-	leader, err := s.solrZk.GetLeader(docID)
-	if err != nil {
-		return err
-	}
-	if leader == "" {
-		s.logger.Printf("Missed leader for docID %s", docID)
-		return NewSolrLeaderError(docID)
-	}
-
 	urlVals := url.Values{
 		"min_rf": {fmt.Sprintf("%d", s.minRf)},
 	}
@@ -83,8 +74,25 @@ func (s *solrHttp) Update(docID string, jsonDocs bool, doc interface{}, opts ...
 	for _, opt := range opts {
 		opt(urlVals)
 	}
+	var host string
+	var err error
+	if docID != "" {
+		host, err = s.solrZk.GetLeader(docID)
+		if err != nil {
+			return err
+		}
+		if host == "" {
+			s.logger.Printf("Missed leader for docID %s", docID)
+			return NewSolrLeaderError(docID)
+		}
+	} else {
+		host, err = s.getReplicasFromRoute(urlVals)
+		if err != nil {
+			return err
+		}
+	}
 
-	uri := fmt.Sprintf("%s/%s/update", leader, s.collection)
+	uri := fmt.Sprintf("%s/%s/update", host, s.collection)
 	if jsonDocs {
 		uri += "/json/docs"
 	}
@@ -143,26 +151,16 @@ func (s *solrHttp) Update(docID string, jsonDocs bool, doc interface{}, opts ...
 
 func (s *solrHttp) Read(opts ...func(url.Values)) (SolrResponse, error) {
 	var host string
+	var err error
 	urlValues := url.Values{
 		"wt": {"json"},
 	}
 	for _, opt := range opts {
 		opt(urlValues)
 	}
-	//if contains route don't round robin
-	if route, ok := urlValues["_route_"]; ok {
-		var err error
-		host, err = s.solrZk.FindReplicaForRoute(route[0])
-		if err != nil {
-			return SolrResponse{}, err
-		}
-
-	} else {
-		protocol := "http"
-		if s.useHTTPS {
-			protocol = "https"
-		}
-		host = fmt.Sprintf("%s://%s/%s", protocol, s.solrZk.GetNextReadHost(), s.baseURL)
+	host, err = s.getReplicasFromRoute(urlValues)
+	if err != nil {
+		return SolrResponse{}, err
 	}
 
 	var sr SolrResponse
@@ -403,4 +401,25 @@ func HttpLogger(logger Logger) func(*solrHttp) {
 	return func(c *solrHttp) {
 		c.logger = logger
 	}
+}
+
+func (s *solrHttp) getReplicasFromRoute(urlValues url.Values) (string, error) {
+	var host string
+	//if contains route don't round robin
+	if route, ok := urlValues["_route_"]; ok {
+		var err error
+		host, err = s.solrZk.FindReplicaForRoute(route[0])
+		if err != nil {
+			return "", err
+		}
+
+	} else {
+		protocol := "http"
+		if s.useHTTPS {
+			protocol = "https"
+		}
+		host = fmt.Sprintf("%s://%s/%s", protocol, s.solrZk.GetNextReadHost(), s.baseURL)
+	}
+	return host, nil
+
 }
