@@ -126,6 +126,9 @@ func (s *solrHttp) Update(docID string, jsonDocs bool, doc interface{}, opts ...
 		if err != nil {
 			return fmt.Errorf("error reading response body for StatusCode %d, err: %s", resp.StatusCode, err)
 		}
+		if resp.StatusCode == http.StatusNotFound {
+			return ErrNotFound
+		}
 		if resp.StatusCode < 500 {
 			return NewSolrError(resp.StatusCode, string(htmlData))
 		} else {
