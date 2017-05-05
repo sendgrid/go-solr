@@ -22,10 +22,10 @@ type stateChanged func([]byte, error)
 type Zookeeper interface {
 	Connect() error
 	GetConnectionString() string
-	Get(path string) ([]byte, error)
+	Get(path string) ([]byte, int, error)
 	Poll(path string, cb stateChanged)
-	GetClusterState() (map[string]Collection, error)
-	GetClusterStateW() (map[string]Collection, <-chan zk.Event, error)
+	GetClusterState() (map[string]Collection, int, error)
+	GetClusterStateW() (map[string]Collection, int, <-chan zk.Event, error)
 	GetLiveNodes() ([]string, error)
 	GetLiveNodesW() ([]string, <-chan zk.Event, error)
 	GetLeaderElectW() (<-chan zk.Event, error)
@@ -46,13 +46,13 @@ func (z *zookeeper) Connect() error {
 	return nil
 }
 
-func (z *zookeeper) Get(node string) ([]byte, error) {
-	bytes, _, err := z.zkConnection.Get(node)
+func (z *zookeeper) Get(node string) ([]byte, int, error) {
+	bytes, stat, err := z.zkConnection.Get(node)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	val := bytes[:len(bytes)]
-	return val, nil
+	return val, int(stat.Version), nil
 }
 
 func (z *zookeeper) GetConnectionString() string {
@@ -61,34 +61,34 @@ func (z *zookeeper) GetConnectionString() string {
 
 func (z *zookeeper) Poll(path string, cb stateChanged) {
 	for {
-		bytes, err := z.Get(path)
+		bytes, _, err := z.Get(path)
 		cb(bytes, err)
 		time.Sleep(z.pollSleep)
 	}
 }
 
-func (z *zookeeper) GetClusterStateW() (map[string]Collection, <-chan zk.Event, error) {
-	node, _, events, err := z.zkConnection.GetW(z.getClusterStatePath(z.zkRoot, z.collection))
+func (z *zookeeper) GetClusterStateW() (map[string]Collection, int, <-chan zk.Event, error) {
+	node, stat, events, err := z.zkConnection.GetW(z.getClusterStatePath(z.zkRoot, z.collection))
 	if err != nil {
-		return nil, events, err
+		return nil, 0, events, err
 	}
 	cs, err := deserializeClusterState(node)
 	if err != nil {
-		return cs, events, err
+		return cs, 0, events, err
 	}
-	return cs, events, nil
+	return cs, int(stat.Version), events, nil
 }
 
-func (z *zookeeper) GetClusterState() (map[string]Collection, error) {
-	node, _, err := z.zkConnection.Get(z.getClusterStatePath(z.zkRoot, z.collection))
+func (z *zookeeper) GetClusterState() (map[string]Collection, int, error) {
+	node, stat, err := z.zkConnection.Get(z.getClusterStatePath(z.zkRoot, z.collection))
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	cs, err := deserializeClusterState(node)
 	if err != nil {
-		return cs, err
+		return cs, 0, err
 	}
-	return cs, nil
+	return cs, int(stat.Version), nil
 }
 
 func (z *zookeeper) GetLeaderElectW() (<-chan zk.Event, error) {

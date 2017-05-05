@@ -10,11 +10,12 @@ import (
 
 var (
 	solrHttpRetrier SolrHTTP
+	solrZk          SolrZK
 )
 
 func init() {
 	var err error
-	solrZk := NewSolrZK("zk:2181", "solr", "solrtest")
+	solrZk = NewSolrZK("zk:2181", "solr", "solrtest")
 	err = solrZk.Listen()
 	if err != nil {
 		panic(err)
@@ -27,7 +28,7 @@ func init() {
 
 }
 func main() {
-	const limit int = 1000 * 10
+	const limit int = 10 * 1000
 	numFound, err := run(limit)
 	if err != nil {
 		panic(err)
@@ -49,20 +50,30 @@ func run(limit int) (uint32, error) {
 			"first_name": "tester" + iterationId,
 			"last_name":  uuid,
 		}
-		if i < limit-20 {
-			err := solrHttpRetrier.Update(doc["id"].(string), true, doc, Commit(false))
+		all, err := solrZk.GetLeadersAndReplicas(shardKey + "!rando" + iterationId)
+
+		if err != nil {
+			panic(err)
+		}
+		if i < limit-1 {
+			err := solrHttpRetrier.Update(all, true, doc, Commit(false))
 			if err != nil {
 				panic(err)
 			}
 		} else {
-			err := solrHttpRetrier.Update(doc["id"].(string), true, doc, Commit(true))
+			err := solrHttpRetrier.Update(all, true, doc, Commit(true))
 			if err != nil {
 				panic(err)
 			}
 		}
 
 	}
-	r, err := solrHttpRetrier.Read(Query("*:*"), FilterQuery("last_name:"+uuid), Rows(uint32(limit)))
+	replicas, err := solrZk.GetReplicaUris("solr")
+
+	if err != nil {
+		panic(err)
+	}
+	r, err := solrHttpRetrier.Read(replicas, Query("*:*"), FilterQuery("last_name:"+uuid), Rows(uint32(limit)))
 	return r.Response.NumFound, err
 
 }

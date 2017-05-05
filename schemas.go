@@ -9,19 +9,19 @@ import (
 
 type SolrZK interface {
 	GetZookeepers() string
-	GetNextReadHost() string
 	GetClusterState() (ClusterState, error)
 	GetClusterProps() (ClusterProps, error)
-	GetLeader(id string) (string, error)
 	Listen() error
 	Listening() bool
-	FindLiveReplicaUrls(key string) ([]string, error)
-	FindReplicaForRoute(key string) (string, error)
+	GetLeaders(docID string) ([]string, error)
+	GetReplicaUris(baseURL string) ([]string, error)
+	GetReplicasFromRoute(route string) ([]string, error)
+	GetLeadersAndReplicas(docID string) ([]string, error)
 }
 
 type SolrHTTP interface {
-	Read(opts ...func(url.Values)) (SolrResponse, error)
-	Update(docID string, jsonDocs bool, doc interface{}, opts ...func(url.Values)) error
+	Read(nodeUris []string, opts ...func(url.Values)) (SolrResponse, error)
+	Update(nodeUris []string, jsonDocs bool, doc interface{}, opts ...func(url.Values)) error
 	Logger() Logger
 }
 

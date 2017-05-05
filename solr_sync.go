@@ -31,11 +31,11 @@ func (s *solrZkInstance) Listen() error {
 			case cEvent := <-collectionsEvents:
 				// do something if its not a session or disconnect
 				if cEvent.Type > zk.EventSession {
-					collections, err := s.zookeeper.GetClusterState()
+					collections, version, err := s.zookeeper.GetClusterState()
 					if err != nil {
 						continue
 					}
-					s.setCollections(collections)
+					s.setCollections(collections, version)
 				}
 				if cEvent.State < zk.StateConnected {
 					s.logger.Printf("[Error] solr cluster zk disconnected  %v", cEvent)
@@ -69,11 +69,11 @@ func (s *solrZkInstance) Listen() error {
 
 func (s *solrZkInstance) initCollectionsListener() (<-chan zk.Event, error) {
 	s.clusterState = ClusterState{}
-	collections, collectionsEvents, err := s.zookeeper.GetClusterStateW()
+	collections, version, collectionsEvents, err := s.zookeeper.GetClusterStateW()
 	if err != nil {
 		return nil, err
 	}
-	s.setCollections(collections)
+	s.setCollections(collections, version)
 	return collectionsEvents, nil
 }
 
@@ -108,22 +108,10 @@ func (s *solrZkInstance) setLiveNodes(nodes []string) {
 	s.logger.Printf("Solr-go: zk livenodes updated %v ", s.clusterState.LiveNodes)
 }
 
-func (s *solrZkInstance) setCollections(collections map[string]Collection) {
+func (s *solrZkInstance) setCollections(collections map[string]Collection, version int) {
 	s.clusterStateMutex.Lock()
 	defer s.clusterStateMutex.Unlock()
 	s.clusterState.Collections = collections
+	s.clusterState.Version = version
 	s.logger.Printf("Solr-go: zk collections updated %v ", s.clusterState.Collections)
-}
-
-func (s *solrZkInstance) GetNextReadHost() string {
-	s.currentNodeMutex.Lock()
-	defer s.currentNodeMutex.Unlock()
-	node := s.clusterState.LiveNodes[s.currentNode]
-	if s.currentNode >= len(s.clusterState.LiveNodes)-1 {
-		s.currentNode = 0
-	} else {
-		s.currentNode++
-	}
-
-	return node
 }

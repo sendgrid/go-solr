@@ -19,7 +19,6 @@ import (
 type solrHttp struct {
 	user        string
 	password    string
-	baseURL     string
 	queryClient HTTPer
 	writeClient HTTPer
 	solrZk      SolrZK
@@ -32,7 +31,7 @@ type solrHttp struct {
 }
 
 func NewSolrHTTP(solrZk SolrZK, collection string, options ...func(*solrHttp)) (SolrHTTP, error) {
-	solrCli := solrHttp{solrZk: solrZk, collection: collection, minRf: 1, baseURL: "solr", useHTTPS: false}
+	solrCli := solrHttp{solrZk: solrZk, collection: collection, useHTTPS: false, minRf: 1}
 	solrCli.logger = log.New(os.Stdout, "[SolrClient] ", log.LstdFlags)
 	if !solrZk.Listening() {
 		return nil, fmt.Errorf("must call solr.Listen")
@@ -66,7 +65,10 @@ func NewSolrHTTP(solrZk SolrZK, collection string, options ...func(*solrHttp)) (
 	return &solrCli, nil
 }
 
-func (s *solrHttp) Update(docID string, jsonDocs bool, doc interface{}, opts ...func(url.Values)) error {
+func (s *solrHttp) Update(nodeUris []string, jsonDocs bool, doc interface{}, opts ...func(url.Values)) error {
+	if len(nodeUris) == 0 {
+		return fmt.Errorf("[SolrHTTP] nodeuris: empty node uris is not valid")
+	}
 	urlVals := url.Values{
 		"min_rf": {fmt.Sprintf("%d", s.minRf)},
 	}
@@ -74,25 +76,8 @@ func (s *solrHttp) Update(docID string, jsonDocs bool, doc interface{}, opts ...
 	for _, opt := range opts {
 		opt(urlVals)
 	}
-	var host string
-	var err error
-	if docID != "" {
-		host, err = s.solrZk.GetLeader(docID)
-		if err != nil {
-			return err
-		}
-		if host == "" {
-			s.logger.Printf("Missed leader for docID %s", docID)
-			return NewSolrLeaderError(docID)
-		}
-	} else {
-		host, err = s.getReplicasFromRoute(urlVals)
-		if err != nil {
-			return err
-		}
-	}
 
-	uri := fmt.Sprintf("%s/%s/update", host, s.collection)
+	uri := fmt.Sprintf("%s/%s/update", nodeUris[0], s.collection)
 	if jsonDocs {
 		uri += "/json/docs"
 	}
@@ -152,8 +137,10 @@ func (s *solrHttp) Update(docID string, jsonDocs bool, doc interface{}, opts ...
 	return nil
 }
 
-func (s *solrHttp) Read(opts ...func(url.Values)) (SolrResponse, error) {
-	var host string
+func (s *solrHttp) Read(nodeUris []string, opts ...func(url.Values)) (SolrResponse, error) {
+	if len(nodeUris) == 0 {
+		return SolrResponse{}, fmt.Errorf("[SolrHTTP] nodeuris: empty node uris is not valid")
+	}
 	var err error
 	urlValues := url.Values{
 		"wt": {"json"},
@@ -161,13 +148,9 @@ func (s *solrHttp) Read(opts ...func(url.Values)) (SolrResponse, error) {
 	for _, opt := range opts {
 		opt(urlValues)
 	}
-	host, err = s.getReplicasFromRoute(urlValues)
-	if err != nil {
-		return SolrResponse{}, err
-	}
-
 	var sr SolrResponse
-	u := fmt.Sprintf("%s/%s/select", host, s.collection)
+	u := fmt.Sprintf("%s/%s/select", nodeUris[0], s.collection)
+
 	body := bytes.NewBufferString(urlValues.Encode())
 	req, err := http.NewRequest("POST", u, body)
 	if err != nil {
@@ -239,6 +222,12 @@ func DeleteStreamBody(filter string) func(url.Values) {
 func Query(q string) func(url.Values) {
 	return func(p url.Values) {
 		p["q"] = []string{q}
+	}
+}
+
+func ClusterStateVersion(version int, collection string) func(url.Values) {
+	return func(p url.Values) {
+		p["_stateVer_"] = []string{fmt.Sprintf("%s:%d", collection, version)}
 	}
 }
 
@@ -388,12 +377,6 @@ func Password(password string) func(*solrHttp) {
 	}
 }
 
-func BaseURL(baseURL string) func(*solrHttp) {
-	return func(c *solrHttp) {
-		c.baseURL = baseURL
-	}
-}
-
 func MinRF(minRf int) func(*solrHttp) {
 	return func(c *solrHttp) {
 		c.minRf = minRf
@@ -404,25 +387,4 @@ func HttpLogger(logger Logger) func(*solrHttp) {
 	return func(c *solrHttp) {
 		c.logger = logger
 	}
-}
-
-func (s *solrHttp) getReplicasFromRoute(urlValues url.Values) (string, error) {
-	var host string
-	//if contains route don't round robin
-	if route, ok := urlValues["_route_"]; ok {
-		var err error
-		host, err = s.solrZk.FindReplicaForRoute(route[0])
-		if err != nil {
-			return "", err
-		}
-
-	} else {
-		protocol := "http"
-		if s.useHTTPS {
-			protocol = "https"
-		}
-		host = fmt.Sprintf("%s://%s/%s", protocol, s.solrZk.GetNextReadHost(), s.baseURL)
-	}
-	return host, nil
-
 }
