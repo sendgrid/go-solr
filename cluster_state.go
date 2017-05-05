@@ -7,7 +7,7 @@ type ClusterState struct {
 
 type Collection struct {
 	Shards            map[string]Shard `json:"shards"`
-	ReplicationFactor string           `json:replicationFactor`
+	ReplicationFactor string           `json:"replicationFactor"`
 }
 
 type Shard struct {
