@@ -2,6 +2,7 @@ package solr
 
 type ClusterState struct {
 	LiveNodes   []string
+	Version     int
 	Collections map[string]Collection
 }
 

@@ -1,6 +1,7 @@
 package solr
 
 import (
+	"fmt"
 	"net/url"
 	"time"
 )
@@ -19,12 +20,16 @@ func NewSolrHttpRetrier(solrHttp SolrHTTP, retries int, exponentialBackoff time.
 	return &solrRetrier
 }
 
-func (s *SolrHttpRetrier) Read(opts ...func(url.Values)) (SolrResponse, error) {
+func (s *SolrHttpRetrier) Read(nodeUris []string, opts ...func(url.Values)) (SolrResponse, error) {
+	if len(nodeUris) == 0 {
+		return SolrResponse{}, fmt.Errorf("[Solr HTTP Retrier]Length of nodes in solr is empty")
+	}
 	now := time.Now()
 	var resp SolrResponse
 	var err error
 	for attempt := 0; attempt < s.retries; attempt++ {
-		resp, err = s.solrCli.Read(opts...)
+		uri := nodeUris[attempt%len(nodeUris)]
+		resp, err = s.solrCli.Read([]string{uri}, opts...)
 		if err == ErrNotFound {
 			return resp, err
 		}
@@ -41,11 +46,15 @@ func (s *SolrHttpRetrier) Read(opts ...func(url.Values)) (SolrResponse, error) {
 	return resp, err
 }
 
-func (s *SolrHttpRetrier) Update(docID string, jsonDocs bool, doc interface{}, opts ...func(url.Values)) error {
+func (s *SolrHttpRetrier) Update(nodeUris []string, jsonDocs bool, doc interface{}, opts ...func(url.Values)) error {
+	if len(nodeUris) == 0 {
+		return fmt.Errorf("[Solr HTTP Retrier]Length of nodes in solr is empty")
+	}
 	now := time.Now()
 	var err error
 	for attempt := 0; attempt < s.retries; attempt++ {
-		err := s.solrCli.Update(docID, jsonDocs, doc, opts...)
+		uri := nodeUris[attempt%len(nodeUris)]
+		err = s.solrCli.Update([]string{uri}, jsonDocs, doc, opts...)
 		if err == ErrNotFound {
 			return err
 		}
