@@ -56,11 +56,11 @@ func (s *solrZkInstance) GetLeaders(docID string) ([]string, error) {
 func (s *solrZkInstance) GetLeadersAndReplicas(docID string) ([]string, error) {
 	keys := strings.Split(docID, "!")
 	var uris []string
-	leaders, err := s.GetLeaders(keys[0])
+	leaders, err := s.GetLeaders(docID)
 	if err != nil {
 		return uris, err
 	}
-	replicas, err := s.GetReplicasFromRoute(keys[1])
+	replicas, err := s.GetReplicasFromRoute(keys[0])
 	if err != nil {
 		return uris, err
 	}

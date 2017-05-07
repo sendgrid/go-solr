@@ -40,7 +40,7 @@ func (s *solrZkInstance) Listen() error {
 				if cEvent.State < zk.StateConnected {
 					s.logger.Printf("[Error] solr cluster zk disconnected  %v", cEvent)
 				} else {
-					s.logger.Printf("Solr-go: solr cluster zk state changed zkType: %d zkState: %d", cEvent.Type, cEvent.State)
+					s.logger.Printf("go-solr: solr cluster zk state changed zkType: %d zkState: %d", cEvent.Type, cEvent.State)
 				}
 			case lEvent := <-leaderEvents:
 				if lEvent.Type == zk.EventNodeChildrenChanged || lEvent.Type == zk.EventNodeDataChanged {
@@ -58,7 +58,7 @@ func (s *solrZkInstance) Listen() error {
 				if nEvent.State < zk.StateConnected {
 					s.logger.Printf("[Error] solr cluster zk live nodes disconnected zkType: %v ", nEvent)
 				} else {
-					s.logger.Printf("Solr-go: solr cluster zk live nodes state changed zkType: %d zkState: %d", nEvent.Type, nEvent.State)
+					s.logger.Printf("go-solr: solr cluster zk live nodes state changed zkType: %d zkState: %d", nEvent.Type, nEvent.State)
 				}
 			}
 		}
@@ -105,7 +105,7 @@ func (s *solrZkInstance) setLiveNodes(nodes []string) {
 	s.clusterStateMutex.Lock()
 	defer s.clusterStateMutex.Unlock()
 	s.clusterState.LiveNodes = nodes
-	s.logger.Printf("Solr-go: zk livenodes updated %v ", s.clusterState.LiveNodes)
+	s.logger.Printf("go-solr: zk livenodes updated %v ", s.clusterState.LiveNodes)
 }
 
 func (s *solrZkInstance) setCollections(collections map[string]Collection, version int) {
@@ -113,5 +113,5 @@ func (s *solrZkInstance) setCollections(collections map[string]Collection, versi
 	defer s.clusterStateMutex.Unlock()
 	s.clusterState.Collections = collections
 	s.clusterState.Version = version
-	s.logger.Printf("Solr-go: zk collections updated %v ", s.clusterState.Collections)
+	s.logger.Printf("go-solr: zk collections updated %v ", s.clusterState.Collections)
 }

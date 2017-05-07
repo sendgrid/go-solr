@@ -3,7 +3,7 @@ package solr_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/sendgrid/solr-go"
+	"github.com/sendgrid/go-solr"
 	"strings"
 )
 

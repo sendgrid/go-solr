@@ -61,5 +61,5 @@ solrtests:
     - solr2
     - solr1
   volumes:
-    - ".:/go/src/github.com/sendgrid/solr-go:rw"
+    - ".:/go/src/github.com/sendgrid/go-solr:rw"
     - "./bin:/tmp/bin"

@@ -3,7 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"fmt"
-	. "github.com/sendgrid/solr-go"
+	. "github.com/sendgrid/go-solr"
 	"io"
 	"time"
 )

@@ -1,4 +1,4 @@
-# solr-go
+# go-solr
 solr go client from Sendgrid
 
 ## Usage
