@@ -1,4 +1,4 @@
-package: github.com/sendgrid/go-solr
+package: gopkg.in/sendgrid/gosolr.v1
 import:
 - package: github.com/samuel/go-zookeeper
   subpackages:
