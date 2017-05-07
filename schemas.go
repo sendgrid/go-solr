@@ -19,6 +19,13 @@ type SolrZK interface {
 	GetLeadersAndReplicas(docID string) ([]string, error)
 }
 
+type SolrLocator interface {
+	GetLeaders(docID string) ([]string, error)
+	GetReplicaUris(baseURL string) ([]string, error)
+	GetReplicasFromRoute(route string) ([]string, error)
+	GetLeadersAndReplicas(docID string) ([]string, error)
+}
+
 type SolrHTTP interface {
 	Read(nodeUris []string, opts ...func(url.Values)) (SolrResponse, error)
 	Update(nodeUris []string, jsonDocs bool, doc interface{}, opts ...func(url.Values)) error
