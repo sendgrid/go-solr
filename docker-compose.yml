@@ -51,7 +51,7 @@ java:
   volumes:
     - "./runner:/opt/solr/test:rw"
 
-solrtests:
+gotests:
   build: .
   command:  /tmp/bin/solr-tests
   links:
