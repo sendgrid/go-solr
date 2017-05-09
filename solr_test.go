@@ -12,6 +12,8 @@ var _ = Describe("Solr Client", func() {
 	var solrHttp solr.SolrHTTP
 	var locator solr.SolrLocator
 	solrClient = solr.NewSolrZK("zk:2181", "solr", "solrtest")
+	locator = solrClient.GetSolrLocator()
+
 	var err error
 	err = solrClient.Listen()
 	BeforeEach(func() {
