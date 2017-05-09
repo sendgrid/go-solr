@@ -10,6 +10,7 @@ import (
 var _ = Describe("Solr Client", func() {
 	var solrClient solr.SolrZK
 	var solrHttp solr.SolrHTTP
+	var locator solr.SolrLocator
 	solrClient = solr.NewSolrZK("zk:2181", "solr", "solrtest")
 	var err error
 	err = solrClient.Listen()
@@ -42,7 +43,7 @@ var _ = Describe("Solr Client", func() {
 			Expect(err).To(BeNil())
 			Expect(state).To(Not(BeNil()))
 			Expect(len(state.Collections)).To(Equal(1))
-			leaders, err := solrClient.GetLeaders("mycrazyshardkey1!test.1@test.com")
+			leaders, err := locator.GetLeaders("mycrazyshardkey1!test.1@test.com")
 			Expect(err).To(BeNil())
 			leader := leaders[0]
 			Expect(leader).To(Not(BeNil()))
@@ -55,7 +56,7 @@ var _ = Describe("Solr Client", func() {
 			Expect(err).To(BeNil())
 			Expect(state).To(Not(BeNil()))
 			Expect(len(state.Collections)).To(Equal(1))
-			replicas, err := solrClient.GetReplicasFromRoute("mycrazyshardkey1!")
+			replicas, err := locator.GetReplicasFromRoute("mycrazyshardkey1!")
 			Expect(err).To(BeNil())
 			Expect(len(replicas)).To(Not(BeZero()))
 
@@ -65,7 +66,7 @@ var _ = Describe("Solr Client", func() {
 
 		Describe("Test Requests", func() {
 			It("can get requests", func() {
-				replicas, err := solrClient.GetReplicaUris("solr")
+				replicas, err := locator.GetReplicaUris("solr")
 				Expect(err).To(BeNil())
 				r, err := solrHttp.Read(replicas, solr.FilterQuery("*:*"), solr.Rows(10))
 				Expect(err).To(BeNil())
@@ -80,11 +81,11 @@ var _ = Describe("Solr Client", func() {
 					"first_name": "shawn1" + uuid,
 					"last_name":  uuid + "feldman1",
 				}
-				leader, err := solrClient.GetLeaders("mycrazyshardkey1!" + uuid)
+				leader, err := locator.GetLeaders("mycrazyshardkey1!" + uuid)
 				Expect(err).To(BeNil())
 				err = solrHttp.Update(leader, true, doc, solr.Commit(true))
 				Expect(err).To(BeNil())
-				replicas, err := solrClient.GetReplicasFromRoute("mycrazyshardkey1!")
+				replicas, err := locator.GetReplicasFromRoute("mycrazyshardkey1!")
 				Expect(err).To(BeNil())
 				r, err := solrHttp.Read(replicas, solr.Query("*:*"), solr.FilterQuery("first_name:shawn1"+uuid), solr.Rows(10))
 				Expect(err).To(BeNil())
@@ -101,11 +102,11 @@ var _ = Describe("Solr Client", func() {
 					"first_name": "shawn1" + uuid,
 					"last_name":  uuid + "feldman1",
 				}
-				leader, err := solrClient.GetLeaders("mycrazyshardkey1!" + uuid)
+				leader, err := locator.GetLeaders("mycrazyshardkey1!" + uuid)
 				Expect(err).To(BeNil())
 				err = solrHttp.Update(leader, true, doc, solr.Commit(true))
 				Expect(err).To(BeNil())
-				replicas, err := solrClient.GetReplicasFromRoute("mycrazyshardkey1!")
+				replicas, err := locator.GetReplicasFromRoute("mycrazyshardkey1!")
 				Expect(err).To(BeNil())
 				r, err := solrHttp.Read(replicas, solr.Query("*:*"), solr.FilterQuery("first_name:shawn1"+uuid), solr.Rows(10))
 				Expect(err).To(BeNil())
@@ -122,11 +123,11 @@ var _ = Describe("Solr Client", func() {
 					"first_name": "shawn1" + uuid,
 					"last_name":  uuid + "feldman1",
 				}
-				leader, err := solrClient.GetLeaders("mycrazyshardkey1!" + uuid)
+				leader, err := locator.GetLeaders("mycrazyshardkey1!" + uuid)
 				Expect(err).To(BeNil())
 				err = solrHttp.Update(leader, true, doc, solr.Commit(true), solr.Route("mycrazyshardkey1!"))
 				Expect(err).To(BeNil())
-				replicas, err := solrClient.GetReplicasFromRoute("mycrazyshardkey1!")
+				replicas, err := locator.GetReplicasFromRoute("mycrazyshardkey1!")
 				Expect(err).To(BeNil())
 				r, err := solrHttp.Read(replicas, solr.Query("*:*"), solr.FilterQuery("first_name:shawn1"+uuid), solr.Rows(10))
 				Expect(err).To(BeNil())
@@ -145,11 +146,11 @@ var _ = Describe("Solr Client", func() {
 				}
 				state, err := solrClient.GetClusterState()
 				Expect(err).To(BeNil())
-				leader, err := solrClient.GetLeaders("mycrazyshardkey1!" + uuid)
+				leader, err := locator.GetLeaders("mycrazyshardkey1!" + uuid)
 				Expect(err).To(BeNil())
 				err = solrHttp.Update(leader, true, doc, solr.Commit(true), solr.Route("mycrazyshardkey1!"), solr.ClusterStateVersion(state.Version, "goseg"))
 				Expect(err).To(BeNil())
-				replicas, err := solrClient.GetReplicasFromRoute("mycrazyshardkey1!")
+				replicas, err := locator.GetReplicasFromRoute("mycrazyshardkey1!")
 				Expect(err).To(BeNil())
 				r, err := solrHttp.Read(replicas, solr.Query("*:*"), solr.FilterQuery("first_name:shawn1"+uuid), solr.Rows(10), solr.ClusterStateVersion(state.Version, "goseg"))
 				Expect(err).To(BeNil())
@@ -166,11 +167,11 @@ var _ = Describe("Solr Client", func() {
 					"first_name": "shawn3" + uuid,
 					"last_name":  uuid,
 				}
-				leader, err := solrClient.GetLeaders("mycrazyshardkey3!" + uuid)
+				leader, err := locator.GetLeaders("mycrazyshardkey3!" + uuid)
 				Expect(err).To(BeNil())
 				err = solrHttp.Update(leader, true, doc, solr.Commit(true))
 				Expect(err).To(BeNil())
-				replicas, err := solrClient.GetReplicasFromRoute("mycrazyshardkey3!")
+				replicas, err := locator.GetReplicasFromRoute("mycrazyshardkey3!")
 				Expect(err).To(BeNil())
 				r, err := solrHttp.Read(replicas, solr.Query("*:*"), solr.FilterQuery("last_name:"+uuid), solr.Rows(10))
 				Expect(err).To(BeNil())
@@ -190,19 +191,19 @@ var _ = Describe("Solr Client", func() {
 						"last_name":  uuid,
 					}
 					if i < limit-1 {
-						leader, err := solrClient.GetLeaders(doc["id"].(string))
+						leader, err := locator.GetLeaders(doc["id"].(string))
 						Expect(err).To(BeNil())
 						err = solrHttp.Update(leader, true, doc, solr.Commit(false))
 						Expect(err).To(BeNil())
 					} else {
-						leader, err := solrClient.GetLeaders(doc["id"].(string))
+						leader, err := locator.GetLeaders(doc["id"].(string))
 						Expect(err).To(BeNil())
 						err = solrHttp.Update(leader, true, doc, solr.Commit(true))
 						Expect(err).To(BeNil())
 					}
 
 				}
-				replicas, err := solrClient.GetReplicasFromRoute("mycrazyshardkey4!")
+				replicas, err := locator.GetReplicasFromRoute("mycrazyshardkey4!")
 				Expect(err).To(BeNil())
 				r, err := solrHttp.Read(replicas, solr.Query("*:*"), solr.FilterQuery("last_name:"+uuid), solr.Rows(1000))
 				Expect(err).To(BeNil())
@@ -223,7 +224,7 @@ var _ = Describe("Solr Client", func() {
 						"first_name": "tester" + iterationId,
 						"last_name":  uuid,
 					}
-					leader, err := solrClient.GetLeaders(doc["id"].(string))
+					leader, err := locator.GetLeaders(doc["id"].(string))
 					Expect(err).To(BeNil())
 
 					if i < limit-1 {
@@ -235,11 +236,11 @@ var _ = Describe("Solr Client", func() {
 					}
 
 				}
-				leader, err := solrClient.GetLeaders(lastId)
+				leader, err := locator.GetLeaders(lastId)
 				Expect(err).To(BeNil())
 				err = solrHttp.Update(leader, false, nil, solr.Commit(true), solr.DeleteStreamBody("last_name:*"))
 				Expect(err).To(BeNil())
-				replicas, err := solrClient.GetReplicasFromRoute(shardKey + "!")
+				replicas, err := locator.GetReplicasFromRoute(shardKey + "!")
 				Expect(err).To(BeNil())
 				r, err := solrHttp.Read(replicas, solr.Route(shardKey), solr.Query("*:*"), solr.FilterQuery("last_name:"+uuid), solr.Rows(1000))
 				Expect(err).To(BeNil())
@@ -258,7 +259,7 @@ var _ = Describe("Solr Client", func() {
 			Expect(err).To(BeNil())
 			err = solrNoAuthClient.Listen()
 			Expect(err).To(BeNil())
-			replicas, err := solrClient.GetReplicaUris("solr")
+			replicas, err := locator.GetReplicaUris("solr")
 			r, err := solrNoAuthHttp.Read(replicas, solr.FilterQuery("*:*"), solr.Rows(10))
 			Expect(err).To(Not(BeNil()))
 			Expect(strings.Contains(err.Error(), "401")).To(BeTrue())

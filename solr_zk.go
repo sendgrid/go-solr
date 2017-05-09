@@ -39,8 +39,8 @@ func NewSolrZK(zookeepers string, zkRoot string, collectionName string, opts ...
 	return &instance
 }
 
-func GetSolrLocator(solrZk SolrZK) SolrLocator {
-	return solrZk
+func (s *solrZkInstance) GetSolrLocator() SolrLocator {
+	return s
 }
 func (s *solrZkInstance) GetZookeepers() string {
 	return s.zookeeper.GetConnectionString()

@@ -13,10 +13,7 @@ type SolrZK interface {
 	GetClusterProps() (ClusterProps, error)
 	Listen() error
 	Listening() bool
-	GetLeaders(docID string) ([]string, error)
-	GetReplicaUris(baseURL string) ([]string, error)
-	GetReplicasFromRoute(route string) ([]string, error)
-	GetLeadersAndReplicas(docID string) ([]string, error)
+	GetSolrLocator() SolrLocator
 }
 
 type SolrLocator interface {

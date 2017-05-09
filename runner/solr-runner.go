@@ -11,6 +11,7 @@ import (
 var (
 	solrHttpRetrier SolrHTTP
 	solrZk          SolrZK
+	locator         SolrLocator
 )
 
 func init() {
@@ -50,7 +51,7 @@ func run(limit int) (uint32, error) {
 			"first_name": "tester" + iterationId,
 			"last_name":  uuid,
 		}
-		all, err := solrZk.GetLeadersAndReplicas(shardKey + "!rando" + iterationId)
+		all, err := locator.GetLeadersAndReplicas(shardKey + "!rando" + iterationId)
 
 		if err != nil {
 			panic(err)
@@ -68,7 +69,7 @@ func run(limit int) (uint32, error) {
 		}
 
 	}
-	replicas, err := solrZk.GetReplicaUris("solr")
+	replicas, err := locator.GetReplicaUris("solr")
 
 	if err != nil {
 		panic(err)
