@@ -52,6 +52,7 @@ func (s *SolrHttpRetrier) Update(nodeUris []string, jsonDocs bool, doc interface
 	}
 	now := time.Now()
 	var err error
+	backoff := s.exponentialBackoff
 	for attempt := 0; attempt < s.retries; attempt++ {
 		uri := nodeUris[attempt%len(nodeUris)]
 		err = s.solrCli.Update([]string{uri}, jsonDocs, doc, opts...)
@@ -60,7 +61,8 @@ func (s *SolrHttpRetrier) Update(nodeUris []string, jsonDocs bool, doc interface
 		}
 		if err != nil {
 			s.Logger().Printf("[Solr Http Retrier] Error Retrying %v ", err)
-			s.backoff(now, attempt)
+			backoff = s.backoff(backoff)
+			s.Logger().Printf("Sleeping attempt: %d, for time: %v running for: %v ", attempt, backoff, time.Since(now))
 			continue
 		}
 		if attempt > 0 && err == nil {
@@ -76,11 +78,12 @@ func (s *SolrHttpRetrier) Logger() Logger {
 }
 
 //returns whether cap has been passed
-func (s *SolrHttpRetrier) backoff(now time.Time, attempt int) {
+func (s *SolrHttpRetrier) backoff(backoffInterval time.Duration) time.Duration {
 	//cap the time, whichever is less ,float
-	sleepCap := time.Duration(s.exponentialBackoff.Nanoseconds() * int64(attempt))
-	s.Logger().Printf("Sleeping attempt: %d, for time: %v running for: %v ", attempt, sleepCap, time.Since(now))
-	time.Sleep(sleepCap)
+	backoffInterval = time.Duration(backoffInterval.Nanoseconds() * 2)
+
+	time.Sleep(backoffInterval)
+	return backoffInterval
 }
 
 func min(a, b time.Duration) time.Duration {
