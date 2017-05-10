@@ -27,6 +27,7 @@ func (s *SolrHttpRetrier) Read(nodeUris []string, opts ...func(url.Values)) (Sol
 	now := time.Now()
 	var resp SolrResponse
 	var err error
+	backoff := s.exponentialBackoff
 	for attempt := 0; attempt < s.retries; attempt++ {
 		uri := nodeUris[attempt%len(nodeUris)]
 		resp, err = s.solrCli.Read([]string{uri}, opts...)
@@ -35,7 +36,8 @@ func (s *SolrHttpRetrier) Read(nodeUris []string, opts ...func(url.Values)) (Sol
 		}
 		if err != nil {
 			s.Logger().Printf("[Solr Http Retrier] Error Retrying %v ", err)
-			s.backoff(now, attempt)
+			backoff = s.backoff(backoff)
+			s.Logger().Printf("Sleeping attempt: %d, for time: %v running for: %v ", attempt, backoff, time.Since(now))
 			continue
 		}
 		if attempt > 0 {
