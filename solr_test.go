@@ -5,11 +5,13 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/sendgrid/go-solr"
 	"strings"
+	"time"
 )
 
 var _ = Describe("Solr Client", func() {
 	var solrClient solr.SolrZK
 	var solrHttp solr.SolrHTTP
+	var solrHttpRetrier solr.SolrHTTP
 	var locator solr.SolrLocator
 	solrClient = solr.NewSolrZK("zk:2181", "solr", "solrtest")
 	locator = solrClient.GetSolrLocator()
@@ -20,7 +22,7 @@ var _ = Describe("Solr Client", func() {
 		Expect(err).To(BeNil())
 		solrHttp, err = solr.NewSolrHTTP(solrClient, "solrtest", solr.User("solr"), solr.Password("admin"), solr.MinRF(2))
 		Expect(err).To(BeNil())
-
+		solrHttpRetrier = solr.NewSolrHttpRetrier(solrHttp, 5, 100*time.Millisecond)
 	})
 	It("construct", func() {
 		solrClient := solr.NewSolrZK("test", "solr", "solrtest")
@@ -212,6 +214,39 @@ var _ = Describe("Solr Client", func() {
 				Expect(r).To(Not(BeNil()))
 				Expect(r.Response.NumFound).To(BeEquivalentTo(limit))
 			})
+
+			It("can test the retrier requests and read with route many times", func() {
+				const limit int = 100
+				uuid, _ := newUUID()
+				for i := 0; i < limit; i++ {
+					iterationId, _ := newUUID()
+					doc := map[string]interface{}{
+						"id":         "mycrazyshardkey4!rando" + iterationId,
+						"email":      "rando" + iterationId + "@sendgrid.com",
+						"first_name": "tester" + iterationId,
+						"last_name":  uuid,
+					}
+					if i < limit-1 {
+						leader, err := locator.GetLeaders(doc["id"].(string))
+						Expect(err).To(BeNil())
+						err = solrHttpRetrier.Update(leader, true, doc, solr.Commit(false))
+						Expect(err).To(BeNil())
+					} else {
+						leader, err := locator.GetLeaders(doc["id"].(string))
+						Expect(err).To(BeNil())
+						err = solrHttpRetrier.Update(leader, true, doc, solr.Commit(true))
+						Expect(err).To(BeNil())
+					}
+
+				}
+				replicas, err := locator.GetReplicasFromRoute("mycrazyshardkey4!")
+				Expect(err).To(BeNil())
+				r, err := solrHttpRetrier.Read(replicas, solr.Query("*:*"), solr.FilterQuery("last_name:"+uuid), solr.Rows(1000))
+				Expect(err).To(BeNil())
+				Expect(r).To(Not(BeNil()))
+				Expect(r.Response.NumFound).To(BeEquivalentTo(limit))
+			})
+
 			It("can delete all", func() {
 				lastId := ""
 				const limit int = 10
