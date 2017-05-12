@@ -1,5 +1,5 @@
-hash: fad4e49a08be83c97e05236661cd01f00235296712a61cf7720f08d22c2a12f1
-updated: 2017-05-07T10:09:17.489366643-06:00
+hash: cf0ade9f42f913c7136cc4598e7a07c0ee3297907094aa762ac5229e2483ac0d
+updated: 2017-05-12T09:32:43.157735792-04:00
 imports:
 - name: github.com/samuel/go-zookeeper
   version: 218e9c81c0dd8b3b18172b2bbfad92cc7d6db55f
@@ -41,7 +41,7 @@ testImports:
   - matchers/support/goraph/util
   - types
 - name: golang.org/x/sys
-  version: 9ccfe848b9db8435a24c424abbc07a921adf1df5
+  version: 9c9d83fe39ed3fd2d9249fcf6b755891fff54b03
   subpackages:
   - unix
 - name: gopkg.in/yaml.v2
