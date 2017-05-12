@@ -12,7 +12,7 @@ solrClient := solr.NewSolrHttpRetrier(solrhttp)
 The Read and Update methods take a node list use the SolrLocator interface to return a node list
 
 ```
-solr.GetSolrLocator(solr.NewSolrZK(...))
+locator := solr.GetSolrLocator(solr.NewSolrZK(...))
 type SolrLocator interface {
 	GetLeaders(docID string) ([]string, error)
 	GetReplicaUris(baseURL string) ([]string, error)
@@ -24,13 +24,14 @@ type SolrLocator interface {
 
 To make requests
 ```
-solrClient.Read(solr.GetReplicasFromRoute("shard!"),solr.FilterQuery("myfield:test"),solr.Route("shardkey!"))
+solrClient.Read(locator.GetReplicasFromRoute("shard!"),solr.FilterQuery("myfield:test"),solr.Route("shardkey!"))
 ```
 To make updates
 ```
-solrClient.Update(solr.GetLeadersAndReplicas("{anydocidtoroute}"),collectionName,callsSolrJsonDocs, docsMap)
+solrClient.Update(locator.GetLeadersAndReplicas("{anydocidtoroute}"),collectionName,callsSolrJsonDocs, docsMap)
 ```
 
 ## Tests
 1. `docker-compose up`
 2. ``` docker-compose run gotests /bin/bash ```
+3. ```go test```
