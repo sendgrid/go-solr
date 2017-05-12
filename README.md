@@ -33,5 +33,5 @@ solrClient.Update(locator.GetLeadersAndReplicas("{anydocidtoroute}"),collectionN
 
 ## Tests
 1. `docker-compose up`
-2. ``` docker-compose run gotests /bin/bash ```
+2. ``` docker-compose run gotests bash ```
 3. ```go test```
