@@ -4,8 +4,10 @@ solr go client from Sendgrid
 ## Usage
 To start the client
 ```
-solrClient := solr.NewSolrZK(...)
-solrClient.Listen()
+solrzk := solr.NewSolrZK(...)
+solrzk.Listen()
+solrhttp := solr.NewSolrHttp(solrzk)
+solrClient := solr.NewSolrHttpRetrier(solrhttp)
 ```
 The Read and Update methods take a node list use the SolrLocator interface to return a node list
 
@@ -30,5 +32,5 @@ solrClient.Update(solr.GetLeadersAndReplicas("{anydocidtoroute}"),collectionName
 ```
 
 ## Tests
-1. Run solr cloud on 8983 or `docker-compose up`
-2. ``` go test ```
+1. `docker-compose up`
+2. ``` docker-compose run gotests /bin/bash ```
