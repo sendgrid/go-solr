@@ -22,7 +22,10 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	https, _ := solrZk.UseHTTPS()
+	https, err := solrZk.UseHTTPS()
+	if err != nil {
+		panic(err)
+	}
 	solrHttp, err := NewSolrHTTP(https, "solrtest", User("solr"), Password("admin"), MinRF(2))
 	if err != nil {
 		panic(err)
@@ -54,7 +57,6 @@ func run(limit int) (uint32, error) {
 			"last_name":  uuid,
 		}
 		all, err := locator.GetLeadersAndReplicas(shardKey + "!rando" + iterationId)
-
 		if err != nil {
 			panic(err)
 		}

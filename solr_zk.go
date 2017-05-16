@@ -79,16 +79,20 @@ func (s *solrZkInstance) GetLeadersAndReplicas(docID string) ([]string, error) {
 	}
 
 	set := make(map[string]bool, len(leaders)+len(replicas))
-	all := []string{}
+	var all []string
 	for _, v := range leaders {
 		set[v] = true
-		all = append(all, v)
+		if v != "" {
+			all = append(all, v)
+		}
 	}
 	for _, v := range replicas {
 		if there := set[v]; !there {
-			all = append(all, v)
+			if v != "" {
+				all = append(all, v)
+				set[v] = true
+			}
 		}
-		set[v] = true
 	}
 	return all, err
 }
