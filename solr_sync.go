@@ -33,6 +33,11 @@ func (s *solrZkInstance) Listen() error {
 		for {
 			select {
 			case cEvent := <-collectionsEvents:
+				if cEvent.Err != nil {
+					log.Printf("[Go-Solr] error on cevent %v", cEvent)
+					backoff(err)
+					continue
+				}
 				// do something if its not a session or disconnect
 				if cEvent.Type == zk.EventNodeDataChanged {
 					collections, version, err := s.zookeeper.GetClusterState()
@@ -40,16 +45,19 @@ func (s *solrZkInstance) Listen() error {
 						backoff(err)
 						continue
 					}
-					errCount = 0
 					s.setCollections(collections, version)
 				}
 				if cEvent.State < zk.StateConnected {
 					s.logger.Printf("[Error] solr cluster zk disconnected  %v", cEvent)
-				} else {
-					s.logger.Printf("go-solr: solr cluster zk state changed zkType: %d zkState: %d", cEvent.Type, cEvent.State)
 				}
+				errCount = 0
 
 			case nEvent := <-liveNodeEvents:
+				if nEvent.Err != nil {
+					log.Printf("[Go-Solr] error on nevent %v", nEvent)
+					backoff(err)
+					continue
+				}
 				// do something if its not a session or disconnect
 				if nEvent.Type == zk.EventNodeDataChanged || nEvent.Type == zk.EventNodeChildrenChanged {
 					liveNodes, err := s.zookeeper.GetLiveNodes()
@@ -57,7 +65,6 @@ func (s *solrZkInstance) Listen() error {
 						backoff(err)
 						continue
 					}
-					errCount = 0
 					s.setLiveNodes(liveNodes)
 				}
 				if nEvent.State < zk.StateConnected {
@@ -65,6 +72,7 @@ func (s *solrZkInstance) Listen() error {
 				} else {
 					s.logger.Printf("go-solr: solr cluster zk live nodes state changed zkType: %d zkState: %d", nEvent.Type, nEvent.State)
 				}
+				errCount = 0
 			}
 		}
 	}()
