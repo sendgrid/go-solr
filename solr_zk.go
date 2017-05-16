@@ -67,6 +67,7 @@ func (s *solrZkInstance) GetLeaders(docID string) ([]string, error) {
 }
 
 func (s *solrZkInstance) GetLeadersAndReplicas(docID string) ([]string, error) {
+	leaderCount := 0
 	keys := strings.Split(docID, "!")
 	var uris []string
 	leaders, err := s.GetLeaders(docID)
@@ -84,6 +85,7 @@ func (s *solrZkInstance) GetLeadersAndReplicas(docID string) ([]string, error) {
 		set[v] = true
 		if v != "" {
 			all = append(all, v)
+			leaderCount++
 		}
 	}
 	for _, v := range replicas {
@@ -93,6 +95,9 @@ func (s *solrZkInstance) GetLeadersAndReplicas(docID string) ([]string, error) {
 				set[v] = true
 			}
 		}
+	}
+	if leaderCount == 0 {
+		s.logger.Printf("Could not find any leaders for docid % ", docID)
 	}
 	return all, err
 }
