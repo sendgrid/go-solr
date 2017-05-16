@@ -22,7 +22,8 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	solrHttp, err := NewSolrHTTP(solrZk, "solrtest", User("solr"), Password("admin"), MinRF(2))
+	https, _ := solrZk.UseHTTPS()
+	solrHttp, err := NewSolrHTTP(https, "solrtest", User("solr"), Password("admin"), MinRF(2))
 	if err != nil {
 		panic(err)
 	}

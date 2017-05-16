@@ -46,6 +46,16 @@ func (s *solrZkInstance) GetZookeepers() string {
 	return s.zookeeper.GetConnectionString()
 }
 
+func (s *solrZkInstance) UseHTTPS() (bool, error) {
+	var err error
+	var props ClusterProps
+	props, err = s.GetClusterProps()
+	if err != nil {
+		return false, err
+	}
+	return props.UrlScheme == "https", nil
+}
+
 func (s *solrZkInstance) GetLeaders(docID string) ([]string, error) {
 	cs, err := s.GetClusterState()
 	if err != nil {

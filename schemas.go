@@ -14,6 +14,7 @@ type SolrZK interface {
 	Listen() error
 	Listening() bool
 	GetSolrLocator() SolrLocator
+	UseHTTPS() (bool, error)
 }
 
 type SolrLocator interface {

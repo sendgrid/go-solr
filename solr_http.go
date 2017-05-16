@@ -30,33 +30,24 @@ type solrHttp struct {
 	logger      Logger
 }
 
-func NewSolrHTTP(solrZk SolrZK, collection string, options ...func(*solrHttp)) (SolrHTTP, error) {
-	solrCli := solrHttp{solrZk: solrZk, collection: collection, useHTTPS: false, minRf: 1}
+func NewSolrHTTP(useHTTPS bool, collection string, options ...func(*solrHttp)) (SolrHTTP, error) {
+	solrCli := solrHttp{collection: collection, useHTTPS: false, minRf: 1}
 	solrCli.logger = log.New(os.Stdout, "[SolrClient] ", log.LstdFlags)
-	if !solrZk.Listening() {
-		return nil, fmt.Errorf("must call solr.Listen")
-	}
+
 	for _, opt := range options {
 		opt(&solrCli)
 	}
 
 	var err error
-	var props ClusterProps
-	props, err = solrZk.GetClusterProps()
-	if err != nil {
-		return nil, err
-	}
-	solrCli.useHTTPS = props.UrlScheme == "https"
-
 	if solrCli.writeClient == nil {
-		solrCli.writeClient, err = defaultWriteClient(solrCli.cert, solrCli.useHTTPS)
+		solrCli.writeClient, err = defaultWriteClient(solrCli.cert, useHTTPS)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if solrCli.queryClient == nil {
-		solrCli.queryClient, err = defaultReadClient(solrCli.cert, solrCli.useHTTPS)
+		solrCli.queryClient, err = defaultReadClient(solrCli.cert, useHTTPS)
 		if err != nil {
 			return nil, err
 		}
