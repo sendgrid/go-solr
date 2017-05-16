@@ -21,13 +21,15 @@ func (s *solrZkInstance) Listen() error {
 	if err != nil {
 		return err
 	}
-	leaderEvents, err := s.initLeaderElectListener()
-	if err != nil {
-		return err
-	}
 	//loop forever
 	go func() {
 		errCount := 0
+		log := s.logger
+		backoff := func(err error) {
+			errCount++
+			time.Sleep(time.Duration(errCount*500) * time.Millisecond)
+			log.Printf("[Solr zk]Error connecting to zk %v consecutive: %d", err, errCount)
+		}
 		for {
 			select {
 			case cEvent := <-collectionsEvents:
@@ -35,8 +37,7 @@ func (s *solrZkInstance) Listen() error {
 				if cEvent.Type == zk.EventNodeDataChanged {
 					collections, version, err := s.zookeeper.GetClusterState()
 					if err != nil {
-						errCount++
-						time.Sleep(time.Duration(errCount*500) * time.Millisecond)
+						backoff(err)
 						continue
 					}
 					errCount = 0
@@ -47,17 +48,13 @@ func (s *solrZkInstance) Listen() error {
 				} else {
 					s.logger.Printf("go-solr: solr cluster zk state changed zkType: %d zkState: %d", cEvent.Type, cEvent.State)
 				}
-			case lEvent := <-leaderEvents:
-				if lEvent.Type == zk.EventNodeChildrenChanged || lEvent.Type == zk.EventNodeDataChanged {
-					// s.Logger().Printf("Leader changed pausing")
-				}
+
 			case nEvent := <-liveNodeEvents:
 				// do something if its not a session or disconnect
 				if nEvent.Type == zk.EventNodeDataChanged || nEvent.Type == zk.EventNodeChildrenChanged {
 					liveNodes, err := s.zookeeper.GetLiveNodes()
 					if err != nil {
-						errCount++
-						time.Sleep(time.Duration(errCount*500) * time.Millisecond)
+						backoff(err)
 						continue
 					}
 					errCount = 0
@@ -92,14 +89,6 @@ func (s *solrZkInstance) initLiveNodesListener() (<-chan zk.Event, error) {
 	}
 	s.setLiveNodes(liveNodes)
 	return liveNodeEvents, nil
-}
-
-func (s *solrZkInstance) initLeaderElectListener() (<-chan zk.Event, error) {
-	leaderEvents, err := s.zookeeper.GetLeaderElectW()
-	if err != nil {
-		return nil, err
-	}
-	return leaderEvents, nil
 }
 
 // GetClusterState Intentionally return a copy vs a pointer want to be thread safe
