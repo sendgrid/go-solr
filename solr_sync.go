@@ -2,6 +2,7 @@ package solr
 
 import (
 	"github.com/samuel/go-zookeeper/zk"
+	"time"
 )
 
 func (s *solrZkInstance) Listen() error {
@@ -26,15 +27,19 @@ func (s *solrZkInstance) Listen() error {
 	}
 	//loop forever
 	go func() {
+		errCount := 0
 		for {
 			select {
 			case cEvent := <-collectionsEvents:
 				// do something if its not a session or disconnect
-				if cEvent.Type > zk.EventSession {
+				if cEvent.Type == zk.EventNodeDataChanged {
 					collections, version, err := s.zookeeper.GetClusterState()
 					if err != nil {
+						errCount++
+						time.Sleep(time.Duration(errCount*500) * time.Millisecond)
 						continue
 					}
+					errCount = 0
 					s.setCollections(collections, version)
 				}
 				if cEvent.State < zk.StateConnected {
@@ -48,11 +53,14 @@ func (s *solrZkInstance) Listen() error {
 				}
 			case nEvent := <-liveNodeEvents:
 				// do something if its not a session or disconnect
-				if nEvent.Type > zk.EventSession {
+				if nEvent.Type == zk.EventNodeDataChanged || nEvent.Type == zk.EventNodeChildrenChanged {
 					liveNodes, err := s.zookeeper.GetLiveNodes()
 					if err != nil {
+						errCount++
+						time.Sleep(time.Duration(errCount*500) * time.Millisecond)
 						continue
 					}
+					errCount = 0
 					s.setLiveNodes(liveNodes)
 				}
 				if nEvent.State < zk.StateConnected {
