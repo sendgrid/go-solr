@@ -19,7 +19,7 @@ func findLiveReplicaUrls(key string, cs *Collection) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	var replcaUrls []string
+	var replcaUrls []string = make([]string, 0, len(replicas))
 	for _, replica := range replicas {
 		if replica.State == activeState {
 			replcaUrls = append(replcaUrls, replica.BaseURL)

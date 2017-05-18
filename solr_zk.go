@@ -80,7 +80,7 @@ func (s *solrZkInstance) GetLeadersAndReplicas(docID string) ([]string, error) {
 	}
 
 	set := make(map[string]bool, len(leaders)+len(replicas))
-	var all []string
+	var all []string = make([]string, 0, len(replicas))
 	for _, v := range leaders {
 		set[v] = true
 		if v != "" {
@@ -137,7 +137,7 @@ func (s *solrZkInstance) GetReplicaUris(baseURL string) ([]string, error) {
 		return []string{}, nil
 	}
 	nodes := cs.LiveNodes
-	var uris []string
+	var uris []string = make([]string, 0, len(nodes))
 	for _, v := range nodes {
 		host := fmt.Sprintf("%s://%s/%s", protocol, v, baseURL)
 		uris = append(uris, host)
