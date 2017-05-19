@@ -12,6 +12,7 @@ type Collection struct {
 }
 
 type Shard struct {
+	Name     string             `json:"-"`
 	Range    string             `json:"range"`
 	State    string             `json:"state"`
 	Replicas map[string]Replica `json:"replicas"`

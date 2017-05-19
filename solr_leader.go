@@ -1,7 +1,5 @@
 package solr
 
-import ()
-
 const (
 	activeState string = "active"
 )
@@ -26,6 +24,25 @@ func findLiveReplicaUrls(key string, cs *Collection) ([]string, error) {
 		}
 	}
 	return replcaUrls, nil
+}
+
+func findShard(key string, cs *Collection) (*Shard, error) {
+	composite, err := NewCompositeKey(key)
+	if err != nil {
+		return nil, err
+	}
+	shardKeyHash, err := Hash(composite)
+	for name, shard := range cs.Shards {
+		hashRange, err := ConvertToHashRange(shard.Range)
+		if err != nil {
+			return nil, err
+		}
+		if shardKeyHash >= hashRange.Low && shardKeyHash <= hashRange.High {
+			shard.Name = name
+			return &shard, nil
+		}
+	}
+	return nil, ErrNotFound
 }
 
 func findReplicas(key string, cs *Collection) (map[string]Replica, error) {
