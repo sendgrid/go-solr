@@ -6,7 +6,7 @@ zk:
   command: /tmp/bin/start-zk
 
 solr1:
-  image: solr:6.4.2
+  image: solr:6.5.1
   command: "/opt/solr/solrtest/start-solr"
   links:
     - zk
@@ -14,7 +14,7 @@ solr1:
     - "./bin:/opt/solr/solrtest:rw"
 
 solr2:
-  image: solr:6.4.2
+  image: solr:6.5.1
   command: "/opt/solr/solrtest/start-solr"
   links:
     - zk
@@ -22,7 +22,7 @@ solr2:
     - "./bin:/opt/solr/solrtest:rw"
 
 solr3:
-  image: solr:6.4.2
+  image: solr:6.5.1
   command: "/opt/solr/solrtest/start-solr"
   links:
     - zk
@@ -30,7 +30,7 @@ solr3:
     - "./bin:/opt/solr/solrtest:rw"
 
 solr4:
-  image: solr:6.4.2
+  image: solr:6.5.1
   command: "/opt/solr/solrtest/start-solr"
   ports:
     - "7983:8983"
