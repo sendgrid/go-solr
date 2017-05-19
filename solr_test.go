@@ -1,11 +1,12 @@
 package solr_test
 
 import (
+	"strings"
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/sendgrid/go-solr"
-	"strings"
-	"time"
 )
 
 var _ = Describe("Solr Client", func() {
@@ -286,6 +287,11 @@ var _ = Describe("Solr Client", func() {
 				Expect(r.Response.NumFound).To(BeEquivalentTo(0))
 			})
 
+			It("can get the shard for a route", func() {
+				shard, err := locator.GetShardFromRoute("mycrazyshardkey3!")
+				Expect(err).To(BeNil())
+				Expect(shard).To(Equal("shard1"))
+			})
 		})
 	})
 	Describe("Basic Auth Fails", func() {

@@ -146,6 +146,22 @@ func (s *solrZkInstance) GetReplicaUris(baseURL string) ([]string, error) {
 
 }
 
+func (s *solrZkInstance) GetShardFromRoute(route string) (string, error) {
+	if strings.LastIndex(route, "!") != len(route)-1 {
+		route += "!"
+	}
+	collection, ok := s.clusterState.Collections[s.collection]
+	if !ok {
+		return "", fmt.Errorf("Collection %s does not exist ", s.collection)
+	}
+	shard, err := findShard(route, &collection)
+	if err != nil {
+		return "", err
+	}
+
+	return shard.Name, nil
+}
+
 func (s *solrZkInstance) GetReplicasFromRoute(route string) ([]string, error) {
 	if strings.LastIndex(route, "!") != len(route)-1 {
 		route += "!"

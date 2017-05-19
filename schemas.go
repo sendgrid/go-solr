@@ -21,6 +21,7 @@ type SolrLocator interface {
 	GetLeaders(docID string) ([]string, error)
 	GetReplicaUris(baseURL string) ([]string, error)
 	GetReplicasFromRoute(route string) ([]string, error)
+	GetShardFromRoute(route string) (string, error)
 	GetLeadersAndReplicas(docID string) ([]string, error)
 }
 
