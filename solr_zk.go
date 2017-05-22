@@ -23,10 +23,11 @@ type solrZkInstance struct {
 	clusterStateMutex *sync.Mutex
 	listening         bool
 	logger            Logger
+	sleepTimeMS       int
 }
 
 func NewSolrZK(zookeepers string, zkRoot string, collectionName string, opts ...func(*solrZkInstance)) SolrZK {
-	instance := solrZkInstance{zookeeper: NewZookeeper(zookeepers, zkRoot, collectionName), collection: collectionName}
+	instance := solrZkInstance{zookeeper: NewZookeeper(zookeepers, zkRoot, collectionName), sleepTimeMS: 500, collection: collectionName}
 
 	instance.clusterStateMutex = &sync.Mutex{}
 	instance.listening = false
@@ -42,6 +43,13 @@ func NewSolrZK(zookeepers string, zkRoot string, collectionName string, opts ...
 func (s *solrZkInstance) GetSolrLocator() SolrLocator {
 	return s
 }
+
+func SleepTimeMS(sleepTimeMS int) func(*solrZkInstance) {
+	return func(s *solrZkInstance) {
+		s.sleepTimeMS = sleepTimeMS
+	}
+}
+
 func (s *solrZkInstance) GetZookeepers() string {
 	return s.zookeeper.GetConnectionString()
 }

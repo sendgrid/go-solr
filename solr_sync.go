@@ -12,37 +12,45 @@ func (s *solrZkInstance) Listen() error {
 		return err
 	}
 	s.clusterState = ClusterState{}
-
-	collectionsEvents, err := s.initCollectionsListener()
-	if err != nil {
-		return err
+	var collectionsEvents <-chan zk.Event
+	var liveNodeEvents <-chan zk.Event
+	connect := func() error {
+		collectionsEvents, err = s.initCollectionsListener()
+		if err != nil {
+			return err
+		}
+		liveNodeEvents, err = s.initLiveNodesListener()
+		if err != nil {
+			return err
+		}
+		return nil
 	}
-	liveNodeEvents, err := s.initLiveNodesListener()
+	err = connect()
 	if err != nil {
 		return err
 	}
 	//loop forever
 	go func() {
-		errCount := 0
 		log := s.logger
-		backoff := func(err error) {
-			errCount++
-			time.Sleep(time.Duration(errCount*500) * time.Millisecond)
-			log.Printf("[Solr zk]Error connecting to zk %v consecutive: %d", err, errCount)
+		sleepTime := s.sleepTimeMS
+		logErr := func() {
+			log.Printf("[Solr zk]Error connecting to zk %v sleeping: %d", err, sleepTime)
 		}
 		for {
 			select {
 			case cEvent := <-collectionsEvents:
 				if cEvent.Err != nil {
 					log.Printf("[Go-Solr] error on cevent %v", cEvent)
-					backoff(err)
+					logErr()
+					sleepTime = backoff(sleepTime)
 					continue
 				}
 				// do something if its not a session or disconnect
 				if cEvent.Type == zk.EventNodeDataChanged {
 					collections, version, err := s.zookeeper.GetClusterState()
 					if err != nil {
-						backoff(err)
+						logErr()
+						sleepTime = backoff(sleepTime)
 						continue
 					}
 					s.setCollections(collections, version)
@@ -50,19 +58,21 @@ func (s *solrZkInstance) Listen() error {
 				if cEvent.State < zk.StateConnected {
 					s.logger.Printf("[Error] solr cluster zk disconnected  %v", cEvent)
 				}
-				errCount = 0
+				sleepTime = s.sleepTimeMS
 
 			case nEvent := <-liveNodeEvents:
 				if nEvent.Err != nil {
+					logErr()
 					log.Printf("[Go-Solr] error on nevent %v", nEvent)
-					backoff(err)
+					sleepTime = backoff(sleepTime)
 					continue
 				}
 				// do something if its not a session or disconnect
 				if nEvent.Type == zk.EventNodeDataChanged || nEvent.Type == zk.EventNodeChildrenChanged {
 					liveNodes, err := s.zookeeper.GetLiveNodes()
 					if err != nil {
-						backoff(err)
+						logErr()
+						sleepTime = backoff(sleepTime)
 						continue
 					}
 					s.setLiveNodes(liveNodes)
@@ -72,12 +82,26 @@ func (s *solrZkInstance) Listen() error {
 				} else {
 					s.logger.Printf("go-solr: solr cluster zk live nodes state changed zkType: %d zkState: %d", nEvent.Type, nEvent.State)
 				}
-				errCount = 0
+				sleepTime = s.sleepTimeMS
+			}
+			if !s.zookeeper.IsConnected() {
+				err = connect()
+				if err != nil {
+					s.logger.Printf("[Error] zk connect err %v, sleeping %d", err, sleepTime)
+					sleepTime = backoff(sleepTime)
+				} else {
+					sleepTime = s.sleepTimeMS
+				}
 			}
 		}
 	}()
 	s.listening = true
 	return nil
+}
+
+func backoff(sleepTime int) int {
+	time.Sleep(time.Duration(sleepTime) * time.Millisecond)
+	return sleepTime * 2
 }
 
 func (s *solrZkInstance) initCollectionsListener() (<-chan zk.Event, error) {

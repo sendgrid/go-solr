@@ -20,6 +20,7 @@ type zookeeper struct {
 type stateChanged func([]byte, error)
 
 type Zookeeper interface {
+	IsConnected() bool
 	Connect() error
 	GetConnectionString() string
 	Get(path string) ([]byte, int, error)
@@ -44,6 +45,13 @@ func (z *zookeeper) Connect() error {
 	}
 	z.zkConnection = zkConnection
 	return nil
+}
+
+func (z *zookeeper) IsConnected() bool {
+	if z.zkConnection == nil {
+		return false
+	}
+	return z.zkConnection.State() != zk.StateDisconnected
 }
 
 func (z *zookeeper) Get(node string) ([]byte, int, error) {
