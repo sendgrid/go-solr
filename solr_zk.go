@@ -17,7 +17,6 @@ type solrZkInstance struct {
 	zookeeper         Zookeeper
 	collection        string
 	host              string
-	baseUrl           string
 	currentNode       int
 	clusterState      ClusterState
 	clusterStateMutex *sync.Mutex
@@ -125,7 +124,7 @@ func (s *solrZkInstance) Logger(logger Logger) func(s *solrZkInstance) {
 	}
 }
 
-func (s *solrZkInstance) GetReplicaUris(baseURL string) ([]string, error) {
+func (s *solrZkInstance) GetReplicaUris() ([]string, error) {
 	props, err := s.GetClusterProps()
 	if err != nil {
 		return []string{}, err
@@ -133,9 +132,6 @@ func (s *solrZkInstance) GetReplicaUris(baseURL string) ([]string, error) {
 
 	useHTTPS := props.UrlScheme == "https"
 
-	if baseURL == "" {
-		baseURL = "solr"
-	}
 	protocol := "http"
 	if useHTTPS {
 		protocol = "https"
@@ -147,7 +143,7 @@ func (s *solrZkInstance) GetReplicaUris(baseURL string) ([]string, error) {
 	nodes := cs.LiveNodes
 	var uris []string = make([]string, 0, len(nodes))
 	for _, v := range nodes {
-		host := fmt.Sprintf("%s://%s/%s", protocol, v, baseURL)
+		host := fmt.Sprintf("%s://%s/v2/c", protocol, v)
 		uris = append(uris, host)
 	}
 	return shuffleNodes(uris), nil
