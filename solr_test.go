@@ -72,7 +72,7 @@ var _ = Describe("Solr Client", func() {
 
 		Describe("Test Requests", func() {
 			It("can get requests", func() {
-				replicas, err := locator.GetReplicaUris()
+				replicas, err := locator.GetReplicaUris("solr")
 				Expect(err).To(BeNil())
 				r, err := solrHttp.Read(replicas, solr.FilterQuery("*:*"), solr.Rows(10))
 				Expect(err).To(BeNil())
@@ -304,7 +304,7 @@ var _ = Describe("Solr Client", func() {
 			Expect(err).To(BeNil())
 			err = solrNoAuthClient.Listen()
 			Expect(err).To(BeNil())
-			replicas, err := locator.GetReplicaUris()
+			replicas, err := locator.GetReplicaUris("solr")
 			r, err := solrNoAuthHttp.Read(replicas, solr.FilterQuery("*:*"), solr.Rows(10))
 			Expect(err).To(Not(BeNil()))
 			Expect(strings.Contains(err.Error(), "401")).To(BeTrue())
