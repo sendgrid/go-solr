@@ -15,7 +15,7 @@ The Read and Update methods take a node list use the SolrLocator interface to re
 locator := solr.GetSolrLocator(solr.NewSolrZK(...))
 type SolrLocator interface {
 	GetLeaders(docID string) ([]string, error)
-	GetReplicaUris() ([]string, error)
+	GetReplicaUris(baseURL string) ([]string, error)
 	GetReplicasFromRoute(route string) ([]string, error)
 	GetLeadersAndReplicas(docID string) ([]string, error)
 }

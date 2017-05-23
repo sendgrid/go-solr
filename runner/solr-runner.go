@@ -73,7 +73,7 @@ func run(limit int) (uint32, error) {
 		}
 
 	}
-	replicas, err := locator.GetReplicaUris()
+	replicas, err := locator.GetReplicaUris("solr")
 
 	if err != nil {
 		panic(err)
