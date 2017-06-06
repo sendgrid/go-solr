@@ -1,9 +1,11 @@
 package solr
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -48,6 +50,7 @@ type HTTPer interface {
 type CompositeKey struct {
 	ShardKey string
 	DocID    string
+	Bits     uint
 }
 
 type HashRange struct {
@@ -67,7 +70,22 @@ func NewCompositeKey(id string) (CompositeKey, error) {
 	}
 
 	if len(keys) == 2 {
-		return CompositeKey{ShardKey: keys[0], DocID: keys[1]}, nil
+		shard := keys[0]
+		bitShift := 0
+		var err error
+		i := strings.Index(shard, "/")
+		if i > 0 {
+			bits := strings.Split(shard, "/")
+			shard = bits[0]
+			bitShift, err = strconv.Atoi(bits[1])
+			if err != nil {
+				return CompositeKey{}, err
+			}
+		}
+		if bitShift > 16 {
+			return CompositeKey{}, errors.New(shard + " contains a bit greater than 16")
+		}
+		return CompositeKey{ShardKey: keys[0], DocID: shard, Bits: uint(bitShift)}, nil
 	}
 
 	if len(keys) > 2 {

@@ -18,7 +18,7 @@ done
 
 solr zk -upconfig -d /opt/solr/solrtest -n solrtest -z zk:2181/solr
 sleep 1
-solr create_collection -c solrtest -n solrtest -shards 1 -replicationFactor 4
+solr create_collection -c solrtest -n solrtest -shards 16 -replicationFactor 3
 
 /opt/solr/server/scripts/cloud-scripts/zkcli.sh -zkhost zk:2181/solr -cmd put /security.json '{"authentication": {"class": "solr.BasicAuthPlugin","blockUnknown": true,"credentials": {"solr": "J0IbXqNMOsK6fvu3EseKuMiBiXAeRo51a6OoJBEbPEU= yLhT0cqEvO7CCkBUEZSDBQgTT/50CbfW0WjjC2YZchc="}},"authorization": {"class": "solr.RuleBasedAuthorizationPlugin","permissions": [{"name": "security-edit","role": "admin"}],"user-role": {"solr": "admin"}}}'
 
