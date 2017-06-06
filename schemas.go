@@ -1,6 +1,7 @@
 package solr
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -81,7 +82,9 @@ func NewCompositeKey(id string) (CompositeKey, error) {
 				return CompositeKey{}, err
 			}
 		}
-
+		if bitShift > 16 {
+			return CompositeKey{}, errors.New(shard + " contains a bit greater than 16")
+		}
 		return CompositeKey{ShardKey: keys[0], DocID: shard, Bits: uint(bitShift)}, nil
 	}
 
