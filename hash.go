@@ -7,29 +7,28 @@ import (
 )
 
 func Hash(key CompositeKey) (int32, error) {
-	var hashes []int32
+	mask := 32 - 16 - key.Bits
 	if key.DocID != "" {
-		hashes = []int32{
+		hashes := []int32{
 			int32(murmur3.Sum32([]byte(key.ShardKey))),
 			int32(murmur3.Sum32([]byte(key.DocID))),
 		}
 		masks := []int32{
-			(-1 << (32 - 16)), // -10000000000000000
-			65535,             // 1111111111111111
+			(-1 << mask), // -10000000000000000
+			65535,        // 1111111111111111
 		}
 		return (hashes[0] & masks[0]) | (hashes[1] & masks[1]), nil
-	} else {
-		hashes = []int32{
-			int32(murmur3.Sum32([]byte(key.ShardKey))),
-			int32(0),
-		}
 	}
+	hashes := []int32{
+		int32(murmur3.Sum32([]byte(key.ShardKey))),
+		int32(0),
+	}
+
 	masks := []int32{
-		(-1 << (32 - 16)), // -10000000000000000
-		65535,             // 1111111111111111
+		(-1 << mask), // -10000000000000000
+		65535,        // 1111111111111111
 	}
 	return (hashes[0] & masks[0]) | (hashes[1] & masks[1]), nil
-
 }
 
 func ConvertToHashRange(hashRange string) (HashRange, error) {
