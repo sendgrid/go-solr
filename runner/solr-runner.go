@@ -34,8 +34,8 @@ func init() {
 
 }
 func main() {
-	const limit int = 10 * 1000
-	numFound, err := run(limit, "/3")
+	const limit int = 100 * 1000
+	numFound, err := run(limit, "/1")
 	if err != nil {
 		panic(err)
 	}
@@ -56,15 +56,15 @@ func main() {
 func run(limit int, bits string) (uint32, error) {
 	uuid, _ := newUUID()
 	for i := 0; i < limit; i++ {
-		shardKey := "mycrazyshardkey" + string(i%10)
+		shardKey := fmt.Sprintf("mycrazyshardkey%d", i%10)
 		iterationId, _ := newUUID()
 		doc := map[string]interface{}{
-			"id":         shardKey + bits + "!rando" + iterationId,
+			"id":         fmt.Sprintf("%s%s!rando%s", shardKey, bits, iterationId),
 			"email":      "rando" + iterationId + "@sendgrid.com",
 			"first_name": "tester" + iterationId,
 			"last_name":  uuid,
 		}
-		all, err := locator.GetLeadersAndReplicas(shardKey + bits + "!rando" + iterationId)
+		all, err := locator.GetLeadersAndReplicas(doc["id"].(string))
 		if err != nil {
 			panic(err)
 		}

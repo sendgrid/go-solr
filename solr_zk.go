@@ -75,12 +75,12 @@ func (s *solrZkInstance) GetLeaders(docID string) ([]string, error) {
 
 func (s *solrZkInstance) GetLeadersAndReplicas(docID string) ([]string, error) {
 	leaderCount := 0
-	keys := strings.Split(docID, "!")
 	var uris []string
 	leaders, err := s.GetLeaders(docID)
 	if err != nil {
 		return uris, err
 	}
+	keys := strings.Split(docID, "!")
 	replicas, err := s.GetReplicasFromRoute(keys[0])
 	if err != nil {
 		return uris, err
