@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <schema name="recipient" version="1.6">
-  <field name="_version_" type="long" docValues="true" indexed="true" stored="true" />
+  <field name="_version_" type="long" docValues="true" indexed="false" stored="true" />
   <field name="_root_" type="string" indexed="true" stored="true" />
   <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false" omitNorms="true"/>
   <field name="lists" type="string" indexed="true" stored="true" multiValued="true" />
@@ -19,6 +19,4 @@
   <fieldType name="int" class="solr.IntPointField" />
   <fieldType name="long" class="solr.LongPointField"/>
   <fieldType name="date" class="solr.DatePointField" />
-   <fieldType name="longversion" class="solr.TrieLongField" precisionStep="2147483647" positionIncrementGap="0"/>
-
 </schema>
