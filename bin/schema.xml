@@ -1,22 +1,24 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <schema name="recipient" version="1.6">
-  <field name="_version_" type="long" indexed="true" stored="true" />
-  <field name="_root_" type="string" indexed="true" stored="true" docValues="true" />
+  <field name="_version_" type="long" docValues="true" indexed="true" stored="true" />
+  <field name="_root_" type="string" indexed="true" stored="true" />
   <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false" omitNorms="true"/>
   <field name="lists" type="string" indexed="true" stored="true" multiValued="true" />
   <field name="email" type="string" required="true" indexed="true" docValues="true" stored="true"/>
   <field name="first_name" type="string" indexed="true" docValues="true" stored="true"/>
   <field name="last_name" type="string" indexed="true" docValues="true" stored="true"/>
-  <field name="created_at" type="date" indexed="true" stored="true" docValues="true"/>
-  <field name="updated_at" type="date" indexed="true" stored="true" docValues="true"/>
+  <field name="created_at" type="date" indexed="true" stored="true" />
+  <field name="updated_at" type="date" indexed="true" stored="true" />
 
   <uniqueKey>id</uniqueKey>
 
   <!-- YZ String: Used for non-analyzed fields -->
   <fieldtype name="ignored" stored="true" indexed="false" multiValued="true" class="solr.StrField" />
   <fieldType name="string" class="solr.StrField" sortMissingLast="true" />
-  <fieldType name="float" class="solr.TrieFloatField" precisionStep="2147483647"/>
-  <fieldType name="int" class="solr.TrieIntField" precisionStep="2147483647" />
-  <fieldType name="long" class="solr.TrieLongField" precisionStep="2147483647" positionIncrementGap="0"/>
-  <fieldType name="date" class="solr.TrieDateField" sortMissingLast="true" precisionStep="6"/>
+  <fieldType name="float" class="solr.FloatPointField" />
+  <fieldType name="int" class="solr.IntPointField" />
+  <fieldType name="long" class="solr.LongPointField"/>
+  <fieldType name="date" class="solr.DatePointField" />
+   <fieldType name="longversion" class="solr.TrieLongField" precisionStep="2147483647" positionIncrementGap="0"/>
+
 </schema>
