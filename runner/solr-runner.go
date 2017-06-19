@@ -5,6 +5,8 @@ import (
 	"fmt"
 	. "github.com/sendgrid/go-solr"
 	"io"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -34,8 +36,18 @@ func init() {
 
 }
 func main() {
-	const limit int = 100 * 1000
-	numFound, err := run(limit, "/1")
+	var limit int = 100 * 10
+	fmt.Println(os.Args)
+
+	//get first arg number
+	if len(os.Args) > 0 {
+		var err error
+		limit, err = strconv.Atoi(os.Args[0])
+		if err != nil {
+			limit, err = strconv.Atoi(os.Args[1])
+		}
+	}
+	numFound, err := run(limit, "/3")
 	if err != nil {
 		panic(err)
 	}
@@ -43,6 +55,7 @@ func main() {
 		panic(fmt.Sprintf("limit did not match what was found %d=%d", limit, numFound))
 	}
 	fmt.Println(fmt.Sprintf("runner done %d", numFound))
+
 	numFound, err = run(limit, "")
 	if err != nil {
 		panic(err)
@@ -54,12 +67,18 @@ func main() {
 }
 
 func run(limit int, bits string) (uint32, error) {
+	shardKeys := []string{}
+	for i := 0; i < 10; i++ {
+		uuid, _ := newUUID()
+		shardKey := fmt.Sprintf("mycrazy%sshardkey%s", uuid, bits)
+		shardKeys = append(shardKeys, shardKey)
+	}
 	uuid, _ := newUUID()
 	for i := 0; i < limit; i++ {
-		shardKey := fmt.Sprintf("mycrazyshardkey%d", i%10)
+		shardKey := shardKeys[i%10]
 		iterationId, _ := newUUID()
 		doc := map[string]interface{}{
-			"id":         fmt.Sprintf("%s%s!rando%s", shardKey, bits, iterationId),
+			"id":         fmt.Sprintf("%s!rando%s", shardKey, iterationId),
 			"email":      "rando" + iterationId + "@sendgrid.com",
 			"first_name": "tester" + iterationId,
 			"last_name":  uuid,
@@ -87,6 +106,25 @@ func run(limit int, bits string) (uint32, error) {
 		panic(err)
 	}
 	r, err := solrHttpRetrier.Read(replicas, Query("*:*"), FilterQuery("last_name:"+uuid), Rows(uint32(limit)))
+	sum := 0
+	for i := 0; i < 10; i++ {
+		shardKey := shardKeys[i%10]
+
+		replicas, err := locator.GetLeadersAndReplicas(shardKey)
+
+		if err != nil {
+			panic(err)
+		}
+		check, err := solrHttpRetrier.Read(replicas, Query("id:"+shardKey+"!rando*"), FilterQuery("last_name:"+uuid), Rows(uint32(0)))
+		if err != nil {
+			panic(err)
+		}
+		sum += int(check.Response.NumFound)
+		fmt.Println(fmt.Sprintf("sum is %d", sum))
+
+		//	fmt.Println(fmt.Sprintf("%s hit %d", shardKey, check.Response.NumFound))
+	}
+	fmt.Println(fmt.Sprintf("sum is %d", sum))
 	return r.Response.NumFound, err
 
 }
