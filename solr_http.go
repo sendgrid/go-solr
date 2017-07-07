@@ -28,10 +28,11 @@ type solrHttp struct {
 	defaultRows uint32
 	minRf       int
 	logger      Logger
+	verifyCert  bool
 }
 
 func NewSolrHTTP(useHTTPS bool, collection string, options ...func(*solrHttp)) (SolrHTTP, error) {
-	solrCli := solrHttp{collection: collection, useHTTPS: false, minRf: 1}
+	solrCli := solrHttp{collection: collection, useHTTPS: false, minRf: 1, verifyCert: true}
 	solrCli.logger = log.New(os.Stdout, "[SolrClient] ", log.LstdFlags)
 
 	for _, opt := range options {
@@ -40,14 +41,14 @@ func NewSolrHTTP(useHTTPS bool, collection string, options ...func(*solrHttp)) (
 
 	var err error
 	if solrCli.writeClient == nil {
-		solrCli.writeClient, err = defaultWriteClient(solrCli.cert, useHTTPS)
+		solrCli.writeClient, err = defaultWriteClient(solrCli.cert, useHTTPS, solrCli.verifyCert)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if solrCli.queryClient == nil {
-		solrCli.queryClient, err = defaultReadClient(solrCli.cert, useHTTPS)
+		solrCli.queryClient, err = defaultReadClient(solrCli.cert, useHTTPS, solrCli.verifyCert)
 		if err != nil {
 			return nil, err
 		}
@@ -279,12 +280,12 @@ func UrlVals(urlVals url.Values) func(url.Values) {
 	}
 }
 
-func defaultWriteClient(cert string, https bool) (HTTPer, error) {
+func defaultWriteClient(cert string, https bool, verify bool) (HTTPer, error) {
 	cli := &http.Client{
 		Timeout: time.Duration(30) * time.Second,
 	}
 	if https {
-		tlsConfig, err := getTLSConfig(cert)
+		tlsConfig, err := getTLSConfig(cert, verify)
 		if err != nil {
 			return nil, err
 		}
@@ -293,12 +294,12 @@ func defaultWriteClient(cert string, https bool) (HTTPer, error) {
 	return cli, nil
 }
 
-func defaultReadClient(cert string, https bool) (HTTPer, error) {
+func defaultReadClient(cert string, https bool, verify bool) (HTTPer, error) {
 	cli := &http.Client{
 		Timeout: time.Duration(20) * time.Second,
 	}
 	if https {
-		tlsConfig, err := getTLSConfig(cert)
+		tlsConfig, err := getTLSConfig(cert, verify)
 		if err != nil {
 			return nil, err
 		}
@@ -307,8 +308,8 @@ func defaultReadClient(cert string, https bool) (HTTPer, error) {
 	return cli, nil
 }
 
-func getTLSConfig(certPath string) (*tls.Config, error) {
-	tlsConf := &tls.Config{InsecureSkipVerify: true}
+func getTLSConfig(certPath string, verify bool) (*tls.Config, error) {
+	tlsConf := &tls.Config{InsecureSkipVerify: verify}
 	if certPath != "" {
 		zkRootPEM, err := ioutil.ReadFile(certPath)
 		if err != nil {
@@ -371,6 +372,12 @@ func Password(password string) func(*solrHttp) {
 func MinRF(minRf int) func(*solrHttp) {
 	return func(c *solrHttp) {
 		c.minRf = minRf
+	}
+}
+
+func VerifyCert(verify bool) func(*solrHttp) {
+	return func(c *solrHttp) {
+		c.verifyCert = verify
 	}
 }
 
