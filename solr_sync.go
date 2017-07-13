@@ -105,7 +105,6 @@ func backoff(sleepTime int) int {
 }
 
 func (s *solrZkInstance) initCollectionsListener() (<-chan zk.Event, error) {
-	s.clusterState = ClusterState{}
 	collections, version, collectionsEvents, err := s.zookeeper.GetClusterStateW()
 	if err != nil {
 		return nil, err
