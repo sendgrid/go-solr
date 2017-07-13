@@ -34,13 +34,13 @@ func (s *solrZkInstance) Listen() error {
 		log := s.logger
 		sleepTime := s.sleepTimeMS
 		logErr := func(err error) {
-			log.Fatalf("[Solr zk]Error connecting to zk %v sleeping: %d", err, sleepTime)
+			log.Fatalf("[go-solr] Error connecting to zk %v sleeping: %d", err, sleepTime)
 		}
 		for {
 			select {
 			case cEvent := <-collectionsEvents:
 				if cEvent.Err != nil {
-					log.Printf("[Go-Solr] error on cevent %v", cEvent)
+					log.Printf("[go-solr] error on cevent %v", cEvent)
 					logErr(cEvent.Err)
 					sleepTime = backoff(sleepTime)
 					continue
@@ -56,14 +56,14 @@ func (s *solrZkInstance) Listen() error {
 					s.setCollections(collections, version)
 				}
 				if cEvent.State < zk.StateConnected {
-					s.logger.Printf("[Error] solr cluster zk disconnected  %v", cEvent)
+					s.logger.Printf("[go-solr] solr cluster zk disconnected  %v", cEvent)
 				}
 				sleepTime = s.sleepTimeMS
 
 			case nEvent := <-liveNodeEvents:
 				if nEvent.Err != nil {
 					logErr(nEvent.Err)
-					log.Printf("[Go-Solr] error on nevent %v", nEvent)
+					log.Printf("[go-solr] error on nevent %v", nEvent)
 					sleepTime = backoff(sleepTime)
 					continue
 				}
@@ -78,7 +78,7 @@ func (s *solrZkInstance) Listen() error {
 					s.setLiveNodes(liveNodes)
 				}
 				if nEvent.State < zk.StateConnected {
-					s.logger.Printf("[Error] solr cluster zk live nodes disconnected zkType: %v ", nEvent)
+					s.logger.Fatalf("[go-solr] solr cluster zk live nodes disconnected zkType: %v ", nEvent)
 				} else {
 					s.logger.Printf("go-solr: solr cluster zk live nodes state changed zkType: %d zkState: %d", nEvent.Type, nEvent.State)
 				}
@@ -87,7 +87,7 @@ func (s *solrZkInstance) Listen() error {
 			if !s.zookeeper.IsConnected() {
 				err = connect()
 				if err != nil {
-					s.logger.Printf("[Error] zk connect err %v, sleeping %d", err, sleepTime)
+					s.logger.Printf("[go-solr] zk connect err %v, sleeping %d", err, sleepTime)
 					sleepTime = backoff(sleepTime)
 				} else {
 					sleepTime = s.sleepTimeMS
