@@ -118,9 +118,9 @@ func (s *solrZkInstance) Listening() bool {
 	return s.listening
 }
 
-func (s *solrZkInstance) Logger(logger Logger) func(s *solrZkInstance) {
+func SolrZKLogger(logger Logger) func(s *solrZkInstance) {
 	return func(solrZk *solrZkInstance) {
-		s.logger = logger
+		solrZk.logger = logger
 	}
 }
 
