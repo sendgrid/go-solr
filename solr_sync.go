@@ -33,15 +33,15 @@ func (s *solrZkInstance) Listen() error {
 	go func() {
 		log := s.logger
 		sleepTime := s.sleepTimeMS
-		logErr := func() {
-			log.Printf("[Solr zk]Error connecting to zk %v sleeping: %d", err, sleepTime)
+		logErr := func(err error) {
+			log.Fatalf("[Solr zk]Error connecting to zk %v sleeping: %d", err, sleepTime)
 		}
 		for {
 			select {
 			case cEvent := <-collectionsEvents:
 				if cEvent.Err != nil {
 					log.Printf("[Go-Solr] error on cevent %v", cEvent)
-					logErr()
+					logErr(cEvent.Err)
 					sleepTime = backoff(sleepTime)
 					continue
 				}
@@ -49,7 +49,7 @@ func (s *solrZkInstance) Listen() error {
 				if cEvent.Type == zk.EventNodeDataChanged {
 					collections, version, err := s.zookeeper.GetClusterState()
 					if err != nil {
-						logErr()
+						logErr(err)
 						sleepTime = backoff(sleepTime)
 						continue
 					}
@@ -62,7 +62,7 @@ func (s *solrZkInstance) Listen() error {
 
 			case nEvent := <-liveNodeEvents:
 				if nEvent.Err != nil {
-					logErr()
+					logErr(nEvent.Err)
 					log.Printf("[Go-Solr] error on nevent %v", nEvent)
 					sleepTime = backoff(sleepTime)
 					continue
@@ -71,7 +71,7 @@ func (s *solrZkInstance) Listen() error {
 				if nEvent.Type == zk.EventNodeDataChanged || nEvent.Type == zk.EventNodeChildrenChanged {
 					liveNodes, err := s.zookeeper.GetLiveNodes()
 					if err != nil {
-						logErr()
+						logErr(err)
 						sleepTime = backoff(sleepTime)
 						continue
 					}
