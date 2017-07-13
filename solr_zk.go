@@ -156,7 +156,7 @@ func (s *solrZkInstance) GetShardFromRoute(route string) (string, error) {
 	}
 	collection, ok := s.clusterState.Collections[s.collection]
 	if !ok {
-		return "", fmt.Errorf("Collection %s does not exist ", s.collection)
+		return "", fmt.Errorf("[go-solr] Collection %s does not exist ", s.collection)
 	}
 	shard, err := findShard(route, &collection)
 	if err != nil {
@@ -172,7 +172,7 @@ func (s *solrZkInstance) GetReplicasFromRoute(route string) ([]string, error) {
 	}
 	collection, ok := s.clusterState.Collections[s.collection]
 	if !ok {
-		return nil, fmt.Errorf("Collection %s does not exist ", s.collection)
+		return nil, fmt.Errorf("[go-solr]  Collection %s does not exist ", s.collection)
 	}
 	//if contains route don't round robin
 	hosts, err := findLiveReplicaUrls(route, &collection)
