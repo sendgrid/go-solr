@@ -36,8 +36,8 @@ type SolrHTTP interface {
 
 type Logger interface {
 	Error(err error)
-	Info(v interface{})
-	Debug(v interface{})
+	Info(v ...interface{})
+	Debug(v ...interface{})
 	Printf(format string, v ...interface{})
 }
 
@@ -48,11 +48,11 @@ type SolrLogger struct {
 func (l *SolrLogger) Error(err error) {
 	log.Println(err)
 }
-func (l *SolrLogger) Info(v interface{}) {
-	log.Println(v)
+func (l *SolrLogger) Info(v ...interface{}) {
+	log.Println(v...)
 }
-func (l *SolrLogger) Debug(v interface{}) {
-	log.Println(v)
+func (l *SolrLogger) Debug(v ...interface{}) {
+	log.Println(v...)
 }
 func (l *SolrLogger) Printf(format string, v ...interface{}) {
 	l.Debug(fmt.Sprintf(format, v...))
