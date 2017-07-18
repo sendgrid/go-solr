@@ -31,6 +31,7 @@ type Zookeeper interface {
 	GetLiveNodesW() ([]string, <-chan zk.Event, error)
 	GetLeaderElectW() (<-chan zk.Event, error)
 	GetClusterProps() (ClusterProps, error)
+	ZKLogger(l Logger)
 }
 
 func NewZookeeper(connectionString string, zkRoot string, collection string) Zookeeper {
@@ -46,7 +47,11 @@ func (z *zookeeper) Connect() error {
 	z.zkConnection = zkConnection
 	return nil
 }
-
+func (z *zookeeper) ZKLogger(l Logger) {
+	if z.zkConnection != nil {
+		z.zkConnection.SetLogger(l)
+	}
+}
 func (z *zookeeper) IsConnected() bool {
 	if z.zkConnection == nil {
 		return false

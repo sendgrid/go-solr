@@ -30,8 +30,7 @@ func NewSolrZK(zookeepers string, zkRoot string, collectionName string, opts ...
 
 	instance.clusterStateMutex = &sync.Mutex{}
 	instance.listening = false
-	instance.logger = log.New(ioutil.Discard, "[SolrClient] ", log.LstdFlags)
-
+	instance.logger = &SolrLogger{log.New(ioutil.Discard, "[SolrClient] ", log.LstdFlags)}
 	for _, opt := range opts {
 		opt(&instance)
 	}
@@ -104,7 +103,7 @@ func (s *solrZkInstance) GetLeadersAndReplicas(docID string) ([]string, error) {
 		}
 	}
 	if leaderCount == 0 {
-		s.logger.Printf("Could not find any leaders for docid % ", docID)
+		s.logger.Debug(fmt.Sprintf("Could not find any leaders for docid % ", docID))
 	}
 	return all, err
 }

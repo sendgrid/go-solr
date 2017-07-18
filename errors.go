@@ -19,7 +19,12 @@ func NewSolrError(status int, message string) error {
 }
 
 func NewSolrRFError(rf, minRF int) error {
-	return SolrError{errorMessage: fmt.Sprintf("recieved error response from solr: rf (%d) is < min_rf (%d)", rf, minRF)}
+	return SolrMinRFError{SolrError{errorMessage: fmt.Sprintf("recieved error response from solr: rf (%d) is < min_rf (%d)", rf, minRF)}, minRF}
+}
+
+type SolrMinRFError struct {
+	SolrError
+	MinRF int
 }
 
 type SolrInternalError struct {

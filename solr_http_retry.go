@@ -35,13 +35,13 @@ func (s *SolrHttpRetrier) Read(nodeUris []string, opts ...func(url.Values)) (Sol
 			return resp, err
 		}
 		if err != nil {
-			s.Logger().Printf("[Solr Http Retrier] Error Retrying %v ", err)
+			s.Logger().Debug(fmt.Sprintf("[Solr Http Retrier] Error Retrying %v ", err))
 			backoff = s.backoff(backoff)
-			s.Logger().Printf("Sleeping attempt: %d, for time: %v running for: %v ", attempt, backoff, time.Since(now))
+			s.Logger().Debug(fmt.Sprintf("Sleeping attempt: %d, for time: %v running for: %v ", attempt, backoff, time.Since(now)))
 			continue
 		}
 		if attempt > 0 {
-			s.Logger().Printf("[Solr Http Retrier] healed after %d", attempt)
+			s.Logger().Debug(fmt.Sprintf("[Solr Http Retrier] healed after %d", attempt))
 		}
 		break
 	}
@@ -62,13 +62,17 @@ func (s *SolrHttpRetrier) Update(nodeUris []string, jsonDocs bool, doc interface
 			return err
 		}
 		if err != nil {
-			s.Logger().Printf("[Solr Http Retrier] Error Retrying %v ", err)
+			if minRFErr, ok := err.(SolrMinRFError); ok {
+				s.Logger().Error(minRFErr)
+			} else {
+				s.Logger().Debug(fmt.Sprintf("[Solr Http Retrier] Error Retrying %v ", err))
+			}
 			backoff = s.backoff(backoff)
-			s.Logger().Printf("Sleeping attempt: %d, for time: %v running for: %v ", attempt, backoff, time.Since(now))
+			s.Logger().Debug(fmt.Sprintf("Sleeping attempt: %d, for time: %v running for: %v ", attempt, backoff, time.Since(now)))
 			continue
 		}
 		if attempt > 0 && err == nil {
-			s.Logger().Printf("[Solr Http Retrier] Healed after attempt %d", attempt)
+			s.Logger().Debug(fmt.Sprintf("[Solr Http Retrier] Healed after attempt %d", attempt))
 		}
 		break
 	}
