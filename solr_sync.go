@@ -39,6 +39,7 @@ func (s *solrZkInstance) Listen() error {
 			log.Error(fmt.Errorf("[go-solr] Error connecting to zk %v sleeping: %d", err, sleepTime))
 		}
 		for {
+			disconnected := false
 			select {
 			case cEvent := <-collectionsEvents:
 				if cEvent.Err != nil {
@@ -57,6 +58,7 @@ func (s *solrZkInstance) Listen() error {
 					}
 					s.setCollections(collections, version)
 				}
+				disconnected = cEvent.State == zk.StateDisconnected
 				sleepTime = s.sleepTimeMS
 
 			case nEvent := <-liveNodeEvents:
@@ -76,15 +78,20 @@ func (s *solrZkInstance) Listen() error {
 					}
 					s.setLiveNodes(liveNodes)
 				}
+				disconnected = nEvent.State == zk.StateDisconnected
 				sleepTime = s.sleepTimeMS
 			}
-			if !s.zookeeper.IsConnected() {
+			if !s.zookeeper.IsConnected() || disconnected {
 				err = connect()
 				if err != nil {
 					s.logger.Error(fmt.Errorf("[go-solr] zk connect err %v, sleeping %d", err, sleepTime))
 					sleepTime = backoff(sleepTime)
 				} else {
-					sleepTime = s.sleepTimeMS
+					if disconnected {
+						sleepTime = backoff(sleepTime)
+					} else {
+						sleepTime = s.sleepTimeMS
+					}
 				}
 			}
 		}
