@@ -34,8 +34,8 @@ type solrHttp struct {
 
 func NewSolrHTTP(useHTTPS bool, collection string, options ...func(*solrHttp)) (SolrHTTP, error) {
 	solrCli := solrHttp{collection: collection, minRf: 1, insecureSkipVerify: false, readTimeoutSeconds: 20, writeTimeoutSeconds: 30}
-	solrCli.logger = log.New(os.Stdout, "[SolrClient] ", log.LstdFlags)
-
+	logger := log.New(os.Stdout, "[SolrClient] ", log.LstdFlags)
+	solrCli.logger = &SolrLogger{logger}
 	for _, opt := range options {
 		opt(&solrCli)
 	}
