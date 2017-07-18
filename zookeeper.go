@@ -57,7 +57,6 @@ func (z *zookeeper) IsConnected() bool {
 		return false
 	}
 	return z.zkConnection.State() != zk.StateDisconnected &&
-		z.zkConnection.State() != zk.StateUnknown &&
 		z.zkConnection.State() != zk.StateExpired &&
 		z.zkConnection.State() != zk.StateAuthFailed
 }
