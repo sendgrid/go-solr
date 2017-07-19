@@ -21,3 +21,10 @@ script:
 
 after_script:
   - docker-compose down
+
+notifications:
+  email:
+    recipients:
+      - shawn.feldman+go-solr@gmail.com
+    on_success: never # default: change
+    on_failure: always # default: always
