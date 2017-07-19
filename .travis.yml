@@ -27,5 +27,6 @@ notifications:
     recipients:
       - team-mcon-engineers+gosolr@sendgrid.com
       - team-mcrwc-engineers+gosolr@sendgrid.com
+      - shawn.feldman@sendgrid.com
     on_success: never # default: change
     on_failure: always # default: always
