@@ -1,6 +1,8 @@
 # go-solr
 solr go client from Sendgrid
 
+![travis](https://travis-ci.org/sendgrid/go-solr.svg?branch=master)
+
 ## Usage
 To start the client
 ```
