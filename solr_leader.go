@@ -1,7 +1,8 @@
 package solr
 
 const (
-	activeState string = "active"
+	activeState     string = "active"
+	recoveringState string = "recovering"
 )
 
 func findLeader(key string, cs *Collection) (string, error) {
@@ -17,13 +18,13 @@ func findLiveReplicaUrls(key string, cs *Collection) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	var replcaUrls []string = make([]string, 0, len(replicas))
+	var replicaUrls []string = make([]string, 0, len(replicas))
 	for _, replica := range replicas {
-		if replica.State == activeState {
-			replcaUrls = append(replcaUrls, replica.BaseURL)
+		if isReplicaActive(&replica) {
+			replicaUrls = append(replicaUrls, replica.BaseURL)
 		}
 	}
-	return replcaUrls, nil
+	return replicaUrls, nil
 }
 
 func findShard(key string, cs *Collection) (*Shard, error) {
@@ -33,13 +34,15 @@ func findShard(key string, cs *Collection) (*Shard, error) {
 	}
 	shardKeyHash, err := Hash(composite)
 	for name, shard := range cs.Shards {
-		hashRange, err := ConvertToHashRange(shard.Range)
-		if err != nil {
-			return nil, err
-		}
-		if shardKeyHash >= hashRange.Low && shardKeyHash <= hashRange.High {
-			shard.Name = name
-			return &shard, nil
+		if isShardActive(&shard) {
+			hashRange, err := ConvertToHashRange(shard.Range)
+			if err != nil {
+				return nil, err
+			}
+			if shardKeyHash >= hashRange.Low && shardKeyHash <= hashRange.High {
+				shard.Name = name
+				return &shard, nil
+			}
 		}
 	}
 	return nil, ErrNotFound
@@ -51,24 +54,36 @@ func findReplicas(key string, cs *Collection) (map[string]Replica, error) {
 		return nil, err
 	}
 	shardKeyHash, err := Hash(composite)
-	var replicas map[string]Replica
+	replicas := make(map[string]Replica)
 	for _, shard := range cs.Shards {
-		hashRange, err := ConvertToHashRange(shard.Range)
-		if err != nil {
-			return nil, err
-		}
-		if shardKeyHash >= hashRange.Low && shardKeyHash <= hashRange.High {
-			replicas = shard.Replicas
-			break
+		if isShardActive(&shard) {
+			hashRange, err := ConvertToHashRange(shard.Range)
+			if err != nil {
+				return nil, err
+			}
+			if shardKeyHash >= hashRange.Low && shardKeyHash <= hashRange.High {
+				for k, v := range shard.Replicas {
+					if isReplicaActive(&v) {
+						replicas[k] = v
+					}
+				}
+				break
+			}
 		}
 	}
 	return replicas, nil
+}
+func isReplicaActive(r *Replica) bool {
+	return r.State == recoveringState || r.State == activeState
+}
+func isShardActive(s *Shard) bool {
+	return s.State == activeState
 }
 
 func findLeaderFromReplicas(replicas map[string]Replica) string {
 	leader := ""
 	for _, replica := range replicas {
-		if replica.Leader == "true" {
+		if replica.Leader == "true" && isReplicaActive(&replica) {
 			leader = replica.BaseURL
 			break
 		}
