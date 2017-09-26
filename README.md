@@ -3,6 +3,8 @@ solr go client from Sendgrid
 
 ![travis](https://travis-ci.org/sendgrid/go-solr.svg?branch=master)
 
+[![CLA assistant](https://cla.sendgrid.com/readme/badge/sendgrid/go-solr)](https://cla.sendgrid.com/sendgrid/go-solr)
+
 ## Usage
 To start the client
 ```
