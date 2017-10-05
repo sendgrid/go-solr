@@ -30,7 +30,7 @@ type SolrLocator interface {
 
 type SolrHTTP interface {
 	Select(nodeUris []string, opts ...func(url.Values)) (SolrResponse, error)
-	Update(nodeUris []string, jsonDocs bool, doc interface{}, opts ...func(url.Values)) error
+	Update(nodeUris []string, singleDoc bool, doc interface{}, opts ...func(url.Values)) error
 	Logger() Logger
 }
 
