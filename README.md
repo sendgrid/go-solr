@@ -28,7 +28,7 @@ type SolrLocator interface {
 
 To make requests
 ```
-solrClient.Read(locator.GetReplicasFromRoute("shard!"),solr.FilterQuery("myfield:test"),solr.Route("shardkey!"))
+solrClient.Select(locator.GetReplicasFromRoute("shard!"),solr.FilterQuery("myfield:test"),solr.Route("shardkey!"))
 ```
 To make updates
 ```

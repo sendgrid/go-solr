@@ -105,7 +105,7 @@ func run(limit int, bits string) (uint32, error) {
 	if err != nil {
 		panic(err)
 	}
-	r, err := solrHttpRetrier.Read(replicas, Query("*:*"), FilterQuery("last_name:"+uuid), Rows(uint32(limit)))
+	r, err := solrHttpRetrier.Select(replicas, Query("*:*"), FilterQuery("last_name:"+uuid), Rows(uint32(limit)))
 	sum := 0
 	for i := 0; i < 10; i++ {
 		shardKey := shardKeys[i%10]
@@ -115,7 +115,7 @@ func run(limit int, bits string) (uint32, error) {
 		if err != nil {
 			panic(err)
 		}
-		check, err := solrHttpRetrier.Read(replicas, Query("id:"+shardKey+"!rando*"), FilterQuery("last_name:"+uuid), Rows(uint32(0)))
+		check, err := solrHttpRetrier.Select(replicas, Query("id:"+shardKey+"!rando*"), FilterQuery("last_name:"+uuid), Rows(uint32(0)))
 		if err != nil {
 			panic(err)
 		}

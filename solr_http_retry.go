@@ -20,7 +20,7 @@ func NewSolrHttpRetrier(solrHttp SolrHTTP, retries int, exponentialBackoff time.
 	return &solrRetrier
 }
 
-func (s *SolrHttpRetrier) Read(nodeUris []string, opts ...func(url.Values)) (SolrResponse, error) {
+func (s *SolrHttpRetrier) Select(nodeUris []string, opts ...func(url.Values)) (SolrResponse, error) {
 	if len(nodeUris) == 0 {
 		return SolrResponse{}, fmt.Errorf("[Solr HTTP Retrier]Length of nodes in solr is empty")
 	}
@@ -30,7 +30,7 @@ func (s *SolrHttpRetrier) Read(nodeUris []string, opts ...func(url.Values)) (Sol
 	backoff := s.exponentialBackoff
 	for attempt := 0; attempt < s.retries; attempt++ {
 		uri := nodeUris[attempt%len(nodeUris)]
-		resp, err = s.solrCli.Read([]string{uri}, opts...)
+		resp, err = s.solrCli.Select([]string{uri}, opts...)
 		if err == ErrNotFound {
 			return resp, err
 		}

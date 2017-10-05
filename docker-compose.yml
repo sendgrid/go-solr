@@ -7,6 +7,8 @@ zk:
 
 solr1:
   image: solr:6.6.0
+  ports:
+      - "7983:8983"
   command: "/opt/solr/solrtest/start-solr"
   links:
     - zk
