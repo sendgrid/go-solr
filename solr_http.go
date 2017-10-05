@@ -130,7 +130,7 @@ func (s *solrHttp) Update(nodeUris []string, jsonDocs bool, doc interface{}, opt
 	return nil
 }
 
-func (s *solrHttp) Read(nodeUris []string, opts ...func(url.Values)) (SolrResponse, error) {
+func (s *solrHttp) Select(nodeUris []string, opts ...func(url.Values)) (SolrResponse, error) {
 	if len(nodeUris) == 0 {
 		return SolrResponse{}, fmt.Errorf("[SolrHTTP] nodeuris: empty node uris is not valid")
 	}
@@ -143,7 +143,6 @@ func (s *solrHttp) Read(nodeUris []string, opts ...func(url.Values)) (SolrRespon
 	}
 	var sr SolrResponse
 	u := fmt.Sprintf("%s/%s/select", nodeUris[0], s.collection)
-
 	body := bytes.NewBufferString(urlValues.Encode())
 	req, err := http.NewRequest("POST", u, body)
 	if err != nil {
@@ -241,6 +240,14 @@ func Route(r string) func(url.Values) {
 	return func(p url.Values) {
 		if r != "" {
 			p["_route_"] = []string{r}
+		}
+	}
+}
+
+func PreferLocalShards(preferLocalShards bool) func(url.Values) {
+	return func(p url.Values) {
+		if preferLocalShards {
+			p["preferLocalShards"] = []string{"true"}
 		}
 	}
 }
