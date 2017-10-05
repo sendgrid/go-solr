@@ -141,7 +141,7 @@ var _ = Describe("Solr Client", func() {
 				Expect(r.Response.NumFound).To(BeEquivalentTo(1))
 			})
 
-			It("test prefer loca", func() {
+			It("test prefer local", func() {
 				uuid, _ := newUUID()
 
 				doc := map[string]interface{}{
