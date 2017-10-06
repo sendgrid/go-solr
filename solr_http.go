@@ -58,7 +58,7 @@ func NewSolrHTTP(useHTTPS bool, collection string, options ...func(*solrHttp)) (
 	return &solrCli, nil
 }
 
-func (s *solrHttp) Update(nodeUris []string, jsonDocs bool, doc interface{}, opts ...func(url.Values)) error {
+func (s *solrHttp) Update(nodeUris []string, singleDoc bool, doc interface{}, opts ...func(url.Values)) error {
 	if len(nodeUris) == 0 {
 		return fmt.Errorf("[SolrHTTP] nodeuris: empty node uris is not valid")
 	}
@@ -71,7 +71,7 @@ func (s *solrHttp) Update(nodeUris []string, jsonDocs bool, doc interface{}, opt
 	}
 
 	uri := fmt.Sprintf("%s/%s/update", nodeUris[0], s.collection)
-	if jsonDocs {
+	if singleDoc {
 		uri += "/json/docs"
 	}
 	var buf bytes.Buffer
