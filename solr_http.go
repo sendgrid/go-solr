@@ -42,14 +42,14 @@ func NewSolrHTTP(useHTTPS bool, collection string, options ...func(*solrHttp)) (
 
 	var err error
 	if solrCli.writeClient == nil {
-		solrCli.writeClient, err = defaultWriteClient(solrCli.cert, useHTTPS, solrCli.insecureSkipVerify, solrCli.writeTimeoutSeconds)
+		solrCli.writeClient, err = getClient(solrCli.cert, useHTTPS, solrCli.insecureSkipVerify, solrCli.writeTimeoutSeconds)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if solrCli.queryClient == nil {
-		solrCli.queryClient, err = defaultReadClient(solrCli.cert, useHTTPS, solrCli.insecureSkipVerify, solrCli.readTimeoutSeconds)
+		solrCli.queryClient, err = getClient(solrCli.cert, useHTTPS, solrCli.insecureSkipVerify, solrCli.readTimeoutSeconds)
 		if err != nil {
 			return nil, err
 		}
@@ -288,21 +288,7 @@ func UrlVals(urlVals url.Values) func(url.Values) {
 	}
 }
 
-func defaultWriteClient(cert string, https bool, insecureSkipVerify bool, timeoutSeconds int) (HTTPer, error) {
-	cli := &http.Client{
-		Timeout: time.Duration(timeoutSeconds) * time.Second,
-	}
-	if https {
-		tlsConfig, err := getTLSConfig(cert, insecureSkipVerify)
-		if err != nil {
-			return nil, err
-		}
-		cli.Transport = &http.Transport{TLSClientConfig: tlsConfig, MaxIdleConnsPerHost: 10}
-	}
-	return cli, nil
-}
-
-func defaultReadClient(cert string, https bool, insecureSkipVerify bool, timeoutSeconds int) (HTTPer, error) {
+func getClient(cert string, https bool, insecureSkipVerify bool, timeoutSeconds int) (HTTPer, error) {
 	cli := &http.Client{
 		Timeout: time.Duration(timeoutSeconds) * time.Second,
 	}
