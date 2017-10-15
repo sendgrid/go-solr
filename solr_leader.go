@@ -49,26 +49,14 @@ func findShard(key string, cs *Collection) (*Shard, error) {
 }
 
 func findReplicas(key string, cs *Collection) (map[string]Replica, error) {
-	composite, err := NewCompositeKey(key)
+	replicas := make(map[string]Replica)
+	shard, err := findShard(key, cs)
 	if err != nil {
 		return nil, err
 	}
-	shardKeyHash := Hash(composite)
-	replicas := make(map[string]Replica)
-	for _, shard := range cs.Shards {
-		if isShardActive(&shard) {
-			hashRange, err := ConvertToHashRange(shard.Range)
-			if err != nil {
-				return nil, err
-			}
-			if shardKeyHash >= hashRange.Low && shardKeyHash <= hashRange.High {
-				for k, v := range shard.Replicas {
-					if isReplicaActive(&v) {
-						replicas[k] = v
-					}
-				}
-				break
-			}
+	for k, v := range shard.Replicas {
+		if isReplicaActive(&v) {
+			replicas[k] = v
 		}
 	}
 	return replicas, nil
