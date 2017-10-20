@@ -2,8 +2,9 @@ package solr
 
 import (
 	"fmt"
-	"github.com/samuel/go-zookeeper/zk"
 	"time"
+
+	"github.com/samuel/go-zookeeper/zk"
 )
 
 func (s *solrZkInstance) Listen() error {
@@ -47,7 +48,7 @@ func (s *solrZkInstance) Listen() error {
 					logErr(cEvent.Err)
 					shouldReconnect = isConnectionClosed(err)
 					sleepTime = backoff(sleepTime)
-					continue
+					break
 				}
 				// do something if its not a session or disconnect
 				if cEvent.Type == zk.EventNodeDataChanged {
@@ -67,7 +68,7 @@ func (s *solrZkInstance) Listen() error {
 					shouldReconnect = isConnectionClosed(err)
 					log.Error(fmt.Errorf("[go-solr] error on nevent %v", nEvent))
 					sleepTime = backoff(sleepTime)
-					continue
+					break
 				}
 				// do something if its not a session or disconnect
 				if nEvent.Type == zk.EventNodeDataChanged || nEvent.Type == zk.EventNodeChildrenChanged {
