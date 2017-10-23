@@ -1,6 +1,8 @@
 # go-solr
 solr go client from Sendgrid
 
+![SendGrid Logo](https://uiux.s3.amazonaws.com/2016-logos/email-logo%402x.png)
+
 ![travis](https://travis-ci.org/sendgrid/go-solr.svg?branch=master)
 
 [![CLA assistant](https://cla.sendgrid.com/readme/badge/sendgrid/go-solr)](https://cla.sendgrid.com/sendgrid/go-solr)
