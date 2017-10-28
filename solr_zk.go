@@ -25,7 +25,7 @@ func NewSolrZK(zookeepers string, zkRoot string, collectionName string, opts ...
 	instance := solrZkInstance{
 		zookeeper: NewZookeeper(zookeepers, zkRoot, collectionName), 
 		sleepTimeMS: 500, 
-		collection: collectionName
+		collection: collectionName,
 	}
 
 	instance.clusterStateMutex = &sync.Mutex{}
