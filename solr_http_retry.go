@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"time"
+	"errors"
 )
 
 type SolrHttpRetrier struct {
@@ -15,14 +16,13 @@ type SolrHttpRetrier struct {
 }
 
 func NewSolrHttpRetrier(solrHttp SolrHTTP, retries int, exponentialBackoff time.Duration) SolrHTTP {
-
 	solrRetrier := SolrHttpRetrier{solrCli: solrHttp, retries: retries, exponentialBackoff: exponentialBackoff}
 	return &solrRetrier
 }
 
 func (s *SolrHttpRetrier) Select(nodeUris []string, opts ...func(url.Values)) (SolrResponse, error) {
 	if len(nodeUris) == 0 {
-		return SolrResponse{}, fmt.Errorf("[Solr HTTP Retrier]Length of nodes in solr is empty")
+		return SolrResponse{}, errors.New("[Solr HTTP Retrier]Length of nodes in solr is empty")
 	}
 	now := time.Now()
 	var resp SolrResponse
@@ -50,7 +50,7 @@ func (s *SolrHttpRetrier) Select(nodeUris []string, opts ...func(url.Values)) (S
 
 func (s *SolrHttpRetrier) Update(nodeUris []string, jsonDocs bool, doc interface{}, opts ...func(url.Values)) error {
 	if len(nodeUris) == 0 {
-		return fmt.Errorf("[Solr HTTP Retrier]Length of nodes in solr is empty")
+		return errors.New("[Solr HTTP Retrier]Length of nodes in solr is empty")
 	}
 	now := time.Now()
 	var err error
@@ -71,7 +71,7 @@ func (s *SolrHttpRetrier) Update(nodeUris []string, jsonDocs bool, doc interface
 			s.Logger().Debug(fmt.Sprintf("Sleeping attempt: %d, for time: %v running for: %v ", attempt, backoff, time.Since(now)))
 			continue
 		}
-		if attempt > 0 && err == nil {
+		if attempt > 0 {
 			s.Logger().Debug(fmt.Sprintf("[Solr Http Retrier] Healed after attempt %d", attempt))
 		}
 		break
