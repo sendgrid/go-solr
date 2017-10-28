@@ -35,7 +35,12 @@ type Zookeeper interface {
 }
 
 func NewZookeeper(connectionString string, zkRoot string, collection string) Zookeeper {
-	return &zookeeper{connectionString: connectionString, zkRoot: zkRoot, collection: collection, pollSleep: time.Duration(1) * time.Second}
+	return &zookeeper{
+		connectionString: connectionString, 
+		zkRoot: zkRoot, 
+		collection: collection, 
+		pollSleep: time.Duration(1) * time.Second,
+	}
 }
 
 func (z *zookeeper) Connect() error {
@@ -66,8 +71,7 @@ func (z *zookeeper) Get(node string) ([]byte, int, error) {
 	if err != nil {
 		return nil, 0, err
 	}
-	val := bytes[:]
-	return val, int(stat.Version), nil
+	return bytes, int(stat.Version), nil
 }
 
 func (z *zookeeper) GetConnectionString() string {
@@ -111,14 +115,13 @@ func (z *zookeeper) GetLeaderElectW() (<-chan zk.Event, error) {
 	if err != nil {
 		return events, err
 	}
-
 	return events, nil
 }
 
 func (z *zookeeper) GetClusterProps() (ClusterProps, error) {
 	node, _, err := z.zkConnection.Get(fmt.Sprintf("/%s/clusterprops.json", z.zkRoot))
 	if err != nil {
-		if strings.Contains(err.Error(), "zk: node does not exist") {
+		if err == zk.ErrNoNode {
 			return ClusterProps{UrlScheme: "http"}, nil
 		}
 		return ClusterProps{}, err
