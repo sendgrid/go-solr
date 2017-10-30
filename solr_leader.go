@@ -81,7 +81,7 @@ func isShardActive(s *Shard) bool {
 }
 
 func findLeaderFromReplicas(replicas map[string]Replica) string {
-	leader := ""
+	var leader string
 	for _, replica := range replicas {
 		if replica.Leader == "true" && isReplicaActive(&replica) {
 			leader = replica.BaseURL
