@@ -1,11 +1,13 @@
-# go-solr
-solr go client from Sendgrid
-
 ![SendGrid Logo](https://uiux.s3.amazonaws.com/2016-logos/email-logo%402x.png)
 
-![travis](https://travis-ci.org/sendgrid/go-solr.svg?branch=master)
-
+[![travis](https://travis-ci.org/sendgrid/go-solr.svg?branch=master)](https://travis-ci.org/sendgrid/go-solr)
+[![Go Report Card](https://goreportcard.com/badge/github.com/sendgrid/go-solr)](https://goreportcard.com/report/github.com/sendgrid/go-solr)
+[![GoDoc](https://godoc.org/github.com/sendgrid/go-solr?status.svg)](https://godoc.org/github.com/sendgrid/go-solr)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![CLA assistant](https://cla.sendgrid.com/readme/badge/sendgrid/go-solr)](https://cla.sendgrid.com/sendgrid/go-solr)
+
+# go-solr
+solr go client from Sendgrid
 
 ## Usage
 To start the client
@@ -41,3 +43,6 @@ solrClient.Update(locator.GetLeadersAndReplicas("{anydocidtoroute}"),collectionN
 1. `docker-compose up`
 2. ``` docker-compose run gotests bash ```
 3. ```go test```
+
+## License
+[The MIT License (MIT)](LICENSE)
