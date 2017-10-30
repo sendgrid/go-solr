@@ -9,10 +9,6 @@ import (
 	"sync"
 )
 
-func init() {
-
-}
-
 type solrZkInstance struct {
 	zookeeper         Zookeeper
 	collection        string
@@ -26,7 +22,11 @@ type solrZkInstance struct {
 }
 
 func NewSolrZK(zookeepers string, zkRoot string, collectionName string, opts ...func(*solrZkInstance)) SolrZK {
-	instance := solrZkInstance{zookeeper: NewZookeeper(zookeepers, zkRoot, collectionName), sleepTimeMS: 500, collection: collectionName}
+	instance := solrZkInstance{
+		zookeeper: NewZookeeper(zookeepers, zkRoot, collectionName), 
+		sleepTimeMS: 500, 
+		collection: collectionName,
+	}
 
 	instance.clusterStateMutex = &sync.Mutex{}
 	instance.listening = false
@@ -140,10 +140,10 @@ func (s *solrZkInstance) GetReplicaUris() ([]string, error) {
 		return []string{}, nil
 	}
 	nodes := cs.LiveNodes
-	var uris []string = make([]string, 0, len(nodes))
-	for _, v := range nodes {
+	uris := make([]string, len(nodes))
+	for i, v := range nodes {
 		host := fmt.Sprintf("%s://%s/v2/c", protocol, v)
-		uris = append(uris, host)
+		uris[i] = host
 	}
 	return shuffleNodes(uris), nil
 
