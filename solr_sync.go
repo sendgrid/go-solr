@@ -23,10 +23,7 @@ func (s *solrZkInstance) Listen() error {
 			return err
 		}
 		liveNodeEvents, err = s.initLiveNodesListener()
-		if err != nil {
-			return err
-		}
-		return nil
+		return err
 	}
 	err = connect()
 	if err != nil {
