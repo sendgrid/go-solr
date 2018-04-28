@@ -77,7 +77,7 @@ func NewCompositeKey(id string) (CompositeKey, error) {
 	keys := strings.Split(id, "!")
 
 	if len(keys) == 1 {
-		if strings.Index(id, "!") < 0 {
+		if !strings.Contains(id, "!") {
 			return CompositeKey{DocID: keys[0]}, nil
 		} else {
 			return CompositeKey{ShardKey: id}, nil
