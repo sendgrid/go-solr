@@ -23,9 +23,9 @@ type solrZkInstance struct {
 
 func NewSolrZK(zookeepers string, zkRoot string, collectionName string, opts ...func(*solrZkInstance)) SolrZK {
 	instance := solrZkInstance{
-		zookeeper: NewZookeeper(zookeepers, zkRoot, collectionName), 
-		sleepTimeMS: 500, 
-		collection: collectionName,
+		zookeeper:   NewZookeeper(zookeepers, zkRoot, collectionName),
+		sleepTimeMS: 500,
+		collection:  collectionName,
 	}
 
 	instance.clusterStateMutex = &sync.Mutex{}

@@ -36,10 +36,10 @@ type Zookeeper interface {
 
 func NewZookeeper(connectionString string, zkRoot string, collection string) Zookeeper {
 	return &zookeeper{
-		connectionString: connectionString, 
-		zkRoot: zkRoot, 
-		collection: collection, 
-		pollSleep: time.Duration(1) * time.Second,
+		connectionString: connectionString,
+		zkRoot:           zkRoot,
+		collection:       collection,
+		pollSleep:        time.Duration(1) * time.Second,
 	}
 }
 
