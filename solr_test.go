@@ -17,7 +17,7 @@ var _ = Describe("Solr Client", func() {
 	solrClient = solr.NewSolrZK("zk:2181", "solr", "solrtest")
 	locator = solrClient.GetSolrLocator()
 
-	var err error = solrClient.Listen()
+	err := solrClient.Listen()
 	BeforeEach(func() {
 		Expect(err).To(BeNil())
 		https, _ := solrClient.UseHTTPS()
