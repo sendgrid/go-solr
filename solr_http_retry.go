@@ -1,10 +1,10 @@
 package solr
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"time"
-	"errors"
 )
 
 type SolrHttpRetrier struct {

@@ -36,10 +36,10 @@ type Zookeeper interface {
 
 func NewZookeeper(connectionString string, zkRoot string, collection string) Zookeeper {
 	return &zookeeper{
-		connectionString: connectionString, 
-		zkRoot: zkRoot, 
-		collection: collection, 
-		pollSleep: time.Duration(1) * time.Second,
+		connectionString: connectionString,
+		zkRoot:           zkRoot,
+		collection:       collection,
+		pollSleep:        time.Duration(1) * time.Second,
 	}
 }
 
@@ -112,10 +112,7 @@ func (z *zookeeper) GetClusterState() (map[string]Collection, int, error) {
 
 func (z *zookeeper) GetLeaderElectW() (<-chan zk.Event, error) {
 	_, _, events, err := z.zkConnection.GetW(fmt.Sprintf("/%s/collections/%s/leader_elect", z.zkRoot, z.collection))
-	if err != nil {
-		return events, err
-	}
-	return events, nil
+	return events, err
 }
 
 func (z *zookeeper) GetClusterProps() (ClusterProps, error) {
@@ -127,10 +124,7 @@ func (z *zookeeper) GetClusterProps() (ClusterProps, error) {
 		return ClusterProps{}, err
 	}
 	cp, err := deserializeClusterProps(node)
-	if err != nil {
-		return cp, err
-	}
-	return cp, nil
+	return cp, err
 }
 
 func (z *zookeeper) GetLiveNodesW() ([]string, <-chan zk.Event, error) {
