@@ -39,10 +39,19 @@ To make updates
 solrClient.Update(locator.GetLeadersAndReplicas("{anydocidtoroute}"),collectionName,callsSolrJsonDocs, docsMap)
 ```
 
-## Tests
-1. `docker-compose up`
-2. ``` docker-compose run gotests bash ```
-3. ```go test```
+## Tests on solr
+1. ```docker-compose up ```
+2. ```docker-compose run gotests bash ```
+3. ```go test ```
+4. ```go run ./cmd/solrRunner.go 1000 ```
+
+## Tests with cluster of 3 solrs
+1. ```docker-compose -p cluster -f docker-compose.cluster.yml up ```
+2. ```docker-compose -p cluster run gotests bash ```
+3. ```go test ```
+4. ```go run ./cmd/solrRunner.go 1000 ```
+
+
 
 ## License
 [The MIT License (MIT)](LICENSE)
