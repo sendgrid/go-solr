@@ -104,8 +104,10 @@ func (s *solrHttp) Update(nodeUris []string, singleDoc bool, doc interface{}, op
 
 	start := time.Now()
 	resp, err := s.writeClient.Do(req)
-	if s.router != nil {
+	if resp != nil {
 		s.router.AddSearchResult(time.Since(start), nodeUri, resp.StatusCode, err)
+	} else if resp == nil  {
+		s.router.AddSearchResult(time.Since(start), nodeUri, http.StatusInternalServerError, err)
 	}
 	if err != nil {
 		return err
@@ -169,8 +171,10 @@ func (s *solrHttp) Select(nodeUris []string, opts ...func(url.Values)) (SolrResp
 	}
 	start := time.Now()
 	resp, err := s.queryClient.Do(req)
-	if s.router != nil {
+	if resp != nil {
 		s.router.AddSearchResult(time.Since(start), nodeUri, resp.StatusCode, err)
+	} else if resp == nil  {
+		s.router.AddSearchResult(time.Since(start), nodeUri, http.StatusInternalServerError, err)
 	}
 	if err != nil {
 		return sr, err
